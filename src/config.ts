@@ -14,7 +14,7 @@ export const themeConfig: ThemeConfig = {
     // author name
     author: 'SlowMo',
     // site url
-    url: 'http://localhost:4321',
+    url: 'https://theslowmo.com',
     // base path
     // root directory for all pages and assets
     base: '/', // e.g., '/blog', '/docs'
