@@ -11,7 +11,8 @@ toc: true
 lang: 'zh'
 abbrlink: ''
 ---
-今天是2026年2月14日情人节，我自己一个人在家开始搭SlowMo个人博客。
+今天是2026年2月14日情人节
+我在卧室里开始搭建SlowMo个人博客。
 
 - 使用 Astro
 - 主题：Retypeset
