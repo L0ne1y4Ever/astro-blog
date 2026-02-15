@@ -53,11 +53,13 @@ for (const file of mdFiles) {
   totalEnWords += enWords
 }
 
+const now = new Date()
 const stats = {
   posts: mdFiles.length,
   totalCJKChars: totalCJK,
   totalEnglishWords: totalEnWords,
-  updatedAt: new Date().toISOString(),
+  updatedAt: now.toISOString(),
+  updatedAtLocal: now.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-'),
 }
 
 fs.mkdirSync(outDir, { recursive: true })

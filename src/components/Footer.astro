@@ -51,7 +51,7 @@ const socialLinks = links.map(({ name, url }) => {
   }
 })
 
-const statsDate = new Date(stats.updatedAt).toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-')
+const statsDate = stats.updatedAtLocal || stats.updatedAt.slice(0, 10)
 const startDate = new Date(themeConfig.site.startDate)
 const now = new Date()
 const uptimeDays = Math.floor((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1
