@@ -5,6 +5,7 @@
   "packageManager": "pnpm@10.26.0",
   "repository": "https://github.com/radishzzz/astro-theme-retypeset",
   "scripts": {
+    "stats": "node src/tools/gen-stats.mjs",
     "dev": "astro check && astro dev",
     "build": "astro check && astro build && pnpm apply-lqip",
     "preview": "astro preview",

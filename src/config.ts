@@ -21,6 +21,7 @@ export const themeConfig: ThemeConfig = {
     // favicon url
     // recommended formats: svg, png or ico
     favicon: '/icons/izumi.png', // or https://example.com/favF.svg
+    startDate: '2026-02-14',
   },
   // SITE INFORMATION >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> END
 

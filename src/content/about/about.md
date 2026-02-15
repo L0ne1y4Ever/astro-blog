@@ -5,7 +5,9 @@ description: 关于 SlowMoBlogs：写什么、为什么写、以及我是谁。
 lang: zh
 ---
 
-你好，我是人畜无害-SlowMo，一名软件工程专业学生。
+你好，这里是开场白
+
+我是人畜无害-SlowMo，一名软件工程专业学生，欢迎关注我的博客。
 
 这个博客 **SlowMoBlogs** 用来记录：
 

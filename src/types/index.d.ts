@@ -17,6 +17,7 @@ export interface ThemeConfig {
     url: string
     base: string
     favicon: string
+    startDate: string
   }
   color: {
     mode: 'light' | 'dark' | 'auto'
