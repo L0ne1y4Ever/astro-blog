@@ -59,7 +59,12 @@ const stats = {
   totalCJKChars: totalCJK,
   totalEnglishWords: totalEnWords,
   updatedAt: now.toISOString(),
-  updatedAtLocal: now.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-'),
+  updatedAtLocal: now.toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    timeZone: 'Asia/Shanghai',
+  }).replace(/\//g, '-'),
 }
 
 fs.mkdirSync(outDir, { recursive: true })

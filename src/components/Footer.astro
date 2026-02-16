@@ -76,11 +76,96 @@ const uptimeDays = Math.floor((now.getTime() - startDate.getTime()) / (1000 * 60
   </p>
 
   <p>
-  运行 {uptimeDays} 天 · 文章 {stats.posts} 篇 · 中文 {stats.totalCJKChars} 字 · 英文 {stats.totalEnglishWords} 词 · 统计更新 {statsDate}
+  运行 <span data-uptime-days data-start-date={themeConfig.site.startDate}>{uptimeDays}</span> 天 · 文章 {stats.posts} 篇 · 中文 {stats.totalCJKChars} 字 · 英文 {stats.totalEnglishWords} 词 · 统计更新 {statsDate}
   </p>
 
 
   <p>
-    Powered by <a class="highlight-hover py-0.8 transition-colors after:bottom-0.35em hover:c-primary" href="https://astro.build/" target="_blank" rel="noopener noreferrer" data-umami-event="outbound-link-click" data-umami-event-url="https://astro.build/">Astro</a> and <a class="highlight-hover py-0.8 transition-colors after:bottom-0.35em hover:c-primary" href="https://github.com/radishzzz/astro-theme-retypeset" target="_blank" rel="noopener noreferrer" data-umami-event="outbound-link-click" data-umami-event-url="https://github.com/radishzzz/astro-theme-retypeset">Retypeset</a>
+    Powered by
+    <a
+      class="highlight-hover py-0.8 transition-colors after:bottom-0.35em hover:c-primary"
+      href="https://astro.build/"
+      target="_blank"
+      rel="noopener noreferrer"
+      data-umami-event="outbound-link-click"
+      data-umami-event-url="https://astro.build/"
+    >Astro</a>
+    and
+    <a
+      class="highlight-hover py-0.8 transition-colors after:bottom-0.35em hover:c-primary"
+      href="https://github.com/radishzzz/astro-theme-retypeset"
+      target="_blank"
+      rel="noopener noreferrer"
+      data-umami-event="outbound-link-click"
+      data-umami-event-url="https://github.com/radishzzz/astro-theme-retypeset"
+    >Retypeset</a>
   </p>
 </footer>
+<script>
+  const BLOG_TIME_ZONE = 'Asia/Shanghai'
+
+  function toCivilDayNumber(year: number, month: number, day: number) {
+    return Math.floor(Date.UTC(year, month - 1, day) / (1000 * 60 * 60 * 24))
+  }
+
+  function getNowDayNumberInTimeZone(timeZone: string) {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).formatToParts(new Date())
+
+    const year = Number(parts.find(p => p.type === 'year')?.value)
+    const month = Number(parts.find(p => p.type === 'month')?.value)
+    const day = Number(parts.find(p => p.type === 'day')?.value)
+
+    if ([year, month, day].some(Number.isNaN))
+      return null
+
+    return toCivilDayNumber(year, month, day)
+  }
+
+  function calcUptimeDays(startDateText: string) {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(startDateText)
+    if (!match)
+      return null
+
+    const startYear = Number(match[1])
+    const startMonth = Number(match[2])
+    const startDay = Number(match[3])
+    if ([startYear, startMonth, startDay].some(Number.isNaN))
+      return null
+
+    const startDayNumber = toCivilDayNumber(startYear, startMonth, startDay)
+    const nowDayNumber = getNowDayNumberInTimeZone(BLOG_TIME_ZONE)
+    if (nowDayNumber === null)
+      return null
+
+    return nowDayNumber - startDayNumber + 1
+  }
+
+  function refreshFooterUptime() {
+    const el = document.querySelector('[data-uptime-days]')
+    if (!el)
+      return
+
+    const startDateText = el.getAttribute('data-start-date')
+    if (!startDateText)
+      return
+
+    const days = calcUptimeDays(startDateText)
+    if (days === null || days < 1)
+      return
+
+    el.textContent = String(days)
+  }
+
+  refreshFooterUptime()
+  document.addEventListener('astro:page-load', refreshFooterUptime)
+
+  if (document.documentElement.dataset.footerUptimeTimer !== '1') {
+    window.setInterval(refreshFooterUptime, 60 * 1000)
+    document.documentElement.dataset.footerUptimeTimer = '1'
+  }
+</script>
