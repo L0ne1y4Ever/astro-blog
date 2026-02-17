@@ -69,21 +69,26 @@ const pagefindNotReady = currentUI.searchNotReady ?? 'Search index is not ready.
       <script
         type="module"
         is:inline
+        data-astro-rerun
         define:vars={{ pagefindBase, pagefindTranslations, pagefindNotReady }}
       >
-        const container = document.querySelector('#pagefind')
-        const fallbackMarkup = container?.innerHTML ?? ''
-
         async function setupPagefind() {
+          const container = document.querySelector('#pagefind')
+          if (!container) {
+            return
+          }
+          if (container.querySelector('.pagefind-ui')) {
+            return
+          }
+
+          const fallbackMarkup = container.innerHTML
           try {
             await import(`${pagefindBase}/pagefind-ui.js`)
             const { PagefindUI } = globalThis
             if (!PagefindUI) {
               throw new Error('PagefindUI is not available on globalThis')
             }
-            if (container) {
-              container.innerHTML = ''
-            }
+            container.innerHTML = ''
             void new PagefindUI({
               element: '#pagefind',
               showSubResults: true,
@@ -92,9 +97,6 @@ const pagefindNotReady = currentUI.searchNotReady ?? 'Search index is not ready.
             })
           }
           catch (error) {
-            if (!container) {
-              return
-            }
             if (!container.innerHTML) {
               container.innerHTML = fallbackMarkup || `<p class="pagefind-fallback">${pagefindNotReady}</p>`
             }
