@@ -7,7 +7,7 @@
   "scripts": {
     "stats": "node src/tools/gen-stats.mjs",
     "dev": "pnpm stats && astro check && astro dev",
-    "build": "pnpm stats && astro check && astro build && pnpm apply-lqip",
+    "build": "pnpm stats && astro check && astro build && pnpm apply-lqip && pagefind --site dist",
     "preview": "astro preview",
     "astro": "astro",
     "lint": "eslint .",
@@ -59,6 +59,7 @@
     "eslint-plugin-astro": "^1.5.0",
     "fast-glob": "^3.3.3",
     "lint-staged": "^16.2.7",
+    "pagefind": "^1.1.2",
     "playwright": "^1.58.1",
     "simple-git-hooks": "^2.13.1",
     "tsx": "^4.21.0",

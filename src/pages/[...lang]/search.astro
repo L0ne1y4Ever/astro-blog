@@ -1,0 +1,181 @@
+---
+import { allLocales, base } from '@/config'
+import { getLangFromLocale, getLangRouteParam } from '@/i18n/lang'
+import { ui } from '@/i18n/ui'
+import Layout from '@/layouts/Layout.astro'
+
+export async function getStaticPaths() {
+  return allLocales.map(lang => ({
+    params: { lang: getLangRouteParam(lang) },
+  }))
+}
+
+const currentLang = getLangFromLocale(Astro.currentLocale)
+const currentUI = ui[currentLang as keyof typeof ui] ?? {}
+const pagefindBase = base ? `${base}/pagefind` : '/pagefind'
+const isProd = import.meta.env.PROD
+function normalizePagefindText(text: string) {
+  return text
+    .replace(/\{COUNT\}/gi, '[COUNT]')
+    .replace(/\{SEARCH_TERM\}/gi, '[SEARCH_TERM]')
+}
+
+const pagefindTranslations = {
+  placeholder: normalizePagefindText(currentUI.searchPlaceholder ?? 'Search'),
+  search_label: normalizePagefindText(currentUI.search ?? 'Search'),
+  clear_search: normalizePagefindText(currentUI.searchClear ?? 'Clear'),
+  zero_results: normalizePagefindText(currentUI.searchNoResults ?? 'No results'),
+  one_result: normalizePagefindText(currentUI.searchOneResult ?? '[COUNT] result'),
+  many_results: normalizePagefindText(currentUI.searchManyResults ?? '[COUNT] results'),
+}
+const pagefindNotReady = currentUI.searchNotReady ?? 'Search index is not ready.'
+---
+
+<Layout>
+  <!-- Decorative Line -->
+  <div class="uno-decorative-line" />
+
+  <section class="pagefind-section" data-pagefind-ignore>
+    <div
+      id="pagefind"
+      class="pagefind"
+      aria-label={currentUI.search}
+    >
+      <div class="pagefind-fallback-ui">
+        <label class="pagefind-fallback-label" for="pagefind-fallback-input">
+          {currentUI.search ?? 'Search'}
+        </label>
+        <input
+          id="pagefind-fallback-input"
+          class="pagefind-fallback-input"
+          type="search"
+          placeholder={currentUI.searchPlaceholder ?? 'Search'}
+          disabled
+        />
+        <p class="pagefind-fallback">
+          {currentUI.searchNotReady ?? 'Search index is not ready.'}
+        </p>
+      </div>
+    </div>
+  </section>
+
+  {isProd
+? (
+    <>
+      <link
+        rel="stylesheet"
+        href={`${pagefindBase}/pagefind-ui.css`}
+      />
+      <script
+        type="module"
+        is:inline
+        define:vars={{ pagefindBase, pagefindTranslations, pagefindNotReady }}
+      >
+        const container = document.querySelector('#pagefind')
+        const fallbackMarkup = container?.innerHTML ?? ''
+
+        async function setupPagefind() {
+          try {
+            await import(`${pagefindBase}/pagefind-ui.js`)
+            const { PagefindUI } = globalThis
+            if (!PagefindUI) {
+              throw new Error('PagefindUI is not available on globalThis')
+            }
+            if (container) {
+              container.innerHTML = ''
+            }
+            void new PagefindUI({
+              element: '#pagefind',
+              showSubResults: true,
+              resetStyles: false,
+              translations: pagefindTranslations,
+            })
+          }
+          catch (error) {
+            if (!container) {
+              return
+            }
+            if (!container.innerHTML) {
+              container.innerHTML = fallbackMarkup || `<p class="pagefind-fallback">${pagefindNotReady}</p>`
+            }
+            console.warn('[Pagefind] Failed to load search assets:', error)
+          }
+        }
+
+        setupPagefind()
+      </script>
+    </>
+  )
+: null}
+
+  <style is:global>
+    .pagefind-section {
+      margin-top: 1.2rem;
+    }
+
+    .pagefind-ui {
+      --pagefind-ui-primary: oklch(var(--un-preset-theme-colors-primary));
+      --pagefind-ui-text: oklch(var(--un-preset-theme-colors-secondary));
+      --pagefind-ui-background: oklch(var(--un-preset-theme-colors-background));
+      --pagefind-ui-border: oklch(var(--un-preset-theme-colors-primary) / 0.2);
+      --pagefind-ui-tag: oklch(var(--un-preset-theme-colors-primary) / 0.12);
+      font-family: inherit;
+    }
+
+    .pagefind-ui__search-input {
+      border-radius: 0.6rem;
+      padding: 0.7rem 0.95rem;
+      line-height: 1.6;
+      font-size: 1rem;
+    }
+
+    .pagefind-ui__results {
+      margin-top: 1.8rem;
+    }
+
+    .pagefind-ui__result-title {
+      font-weight: 600;
+    }
+
+    .pagefind-ui__result-link {
+      text-decoration: none;
+    }
+
+    .pagefind-ui__result-link:hover {
+      text-decoration: underline;
+    }
+
+    .pagefind-fallback {
+      margin-top: 0.6rem;
+      font-size: 0.98rem;
+      color: oklch(var(--un-preset-theme-colors-secondary));
+    }
+
+    .pagefind-fallback-ui {
+      display: grid;
+      gap: 0.45rem;
+      max-width: 38rem;
+    }
+
+    .pagefind-fallback-label {
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: oklch(var(--un-preset-theme-colors-secondary));
+    }
+
+    .pagefind-fallback-input {
+      border-radius: 0.6rem;
+      padding: 0.7rem 0.95rem;
+      line-height: 1.6;
+      font-size: 1rem;
+      border: 1px solid oklch(var(--un-preset-theme-colors-primary) / 0.2);
+      background: oklch(var(--un-preset-theme-colors-background));
+      color: oklch(var(--un-preset-theme-colors-secondary));
+    }
+
+    .pagefind-fallback-input:disabled {
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+  </style>
+</Layout>
