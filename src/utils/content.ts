@@ -27,7 +27,7 @@ function resolvePostFilePath(id: string) {
   return ''
 }
 
-function getPostUpdatedAt(post: CollectionEntry<'posts'>) {
+export function getPostUpdatedAt(post: CollectionEntry<'posts'>) {
   if (post.data.updated) {
     return post.data.updated
   }

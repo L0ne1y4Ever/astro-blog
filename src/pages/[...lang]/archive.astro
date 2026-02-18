@@ -147,11 +147,13 @@ function getAgeForYear(year: number) {
               {posts.map((post) => {
                 const slug = post.data.abbrlink || post.id
                 const tags = post.data.tags ?? []
+                const categories = post.data.categories ?? []
 
                 return (
                   <li
                     class="archive-item"
                     data-tags={tags.join(',')}
+                    data-categories={categories.join(',')}
                     data-created={post.data.published.valueOf()}
                     data-updated={(post.data.updated ?? post.data.published).valueOf()}
                   >
@@ -253,8 +255,8 @@ function getAgeForYear(year: number) {
       })
 
       items.forEach((item) => {
-        const tags = (item.dataset.tags || '').split(',').filter(Boolean)
-        const match = filter === 'all' || tags.includes(filter)
+        const categories = (item.dataset.categories || '').split(',').filter(Boolean)
+        const match = filter === 'all' || categories.includes(filter)
         item.classList.toggle('is-hidden', !match)
         item.setAttribute('aria-hidden', match ? 'false' : 'true')
       })

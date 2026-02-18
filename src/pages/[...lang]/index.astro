@@ -116,8 +116,8 @@ const categoryFilters = [
         })
 
         items.forEach((item) => {
-          const tags = (item.dataset.tags || '').split(',').filter(Boolean)
-          const match = filter === 'all' || tags.includes(filter)
+          const categories = (item.dataset.categories || '').split(',').filter(Boolean)
+          const match = filter === 'all' || categories.includes(filter)
           item.classList.toggle('is-hidden', !match)
           item.setAttribute('aria-hidden', match ? 'false' : 'true')
         })
@@ -369,4 +369,3 @@ const categoryFilters = [
     transition: none;
   }
 </style>
-

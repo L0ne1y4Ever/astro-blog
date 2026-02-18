@@ -10,7 +10,7 @@ import TOC from '@/components/Widgets/TOC.astro'
 import { allLocales } from '@/config'
 import { getLangFromLocale, getLangRouteParam } from '@/i18n/lang'
 import Layout from '@/layouts/Layout.astro'
-import { checkPostSlugDuplication } from '@/utils/content'
+import { checkPostSlugDuplication, getPostUpdatedAt } from '@/utils/content'
 import { getPostDescription } from '@/utils/description'
 
 export async function getStaticPaths() {
@@ -78,6 +78,7 @@ const currentLang = getLangFromLocale(Astro.currentLocale)
 const slug = post.data.abbrlink || post.id
 const description = getPostDescription(post, 'meta')
 const { Content, headings, remarkPluginFrontmatter } = await render(post)
+const updatedDate = getPostUpdatedAt(post)
 ---
 
 <Layout
@@ -110,7 +111,7 @@ const { Content, headings, remarkPluginFrontmatter } = await render(post)
     >
       <PostDate
         date={post.data.published}
-        updatedDate={post.data.updated}
+        updatedDate={updatedDate}
         minutes={remarkPluginFrontmatter.minutes}
       />
     </div>
