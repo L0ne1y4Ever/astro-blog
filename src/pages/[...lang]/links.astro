@@ -1,0 +1,42 @@
+---
+import { friendLinks } from '@/data/friend-links'
+import { allLocales } from '@/config'
+import { getLangFromLocale, getLangRouteParam } from '@/i18n/lang'
+import { ui } from '@/i18n/ui'
+import Layout from '@/layouts/Layout.astro'
+
+export async function getStaticPaths() {
+  return allLocales.map(lang => ({
+    params: { lang: getLangRouteParam(lang) },
+  }))
+}
+
+const currentLang = getLangFromLocale(Astro.currentLocale)
+const currentUI = ui[currentLang as keyof typeof ui] ?? {}
+---
+
+<Layout>
+  <div class="uno-decorative-line" />
+  {friendLinks.length === 0 ? (
+    <p class="mt-4 c-secondary">{currentUI.linksEmpty}</p>
+  ) : (
+    <ul class="mt-4 space-y-3">
+      {friendLinks.map(link => (
+        <li class="uno-round-border border border-secondary/15 p-4 transition-colors hover:(border-primary/20)">
+          <a
+            class="highlight-hover transition-colors after:bottom-0.35em hover:(c-primary font-bold)"
+            href={link.url}
+            target="_blank"
+            rel="noopener"
+            data-umami-event="outbound-link-click"
+          >
+            {link.name}
+          </a>
+          {link.description && (
+            <p class="mt-1 text-3.4 c-secondary">{link.description}</p>
+          )}
+        </li>
+      ))}
+    </ul>
+  )}
+</Layout>

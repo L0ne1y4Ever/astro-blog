@@ -4,9 +4,10 @@ export const themeConfig: ThemeConfig = {
   // SITE INFORMATION >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> START
   site: {
     // site title
-    title: 'SlowMoBlogs',
+    title: 'SlowMo\'s 办事处',
     // site subtitle
-    subtitle: 'A slow-motion journey through the world of blogs',
+    subtitle: `我们的头脑比天空更辽阔。
+    Our minds are wider than the sky.`,
     // site description
     description: 'SlowMoBlogs is a static blog theme based on the Astro framework. Inspired by the concept of slow motion, SlowMoBlogs encourages readers to slow down and savor every word, every image, and every detail. By establishing a new visual standard and reimagining the layout of all pages, SlowMoBlogs creates a reading experience reminiscent of paper books, reviving the beauty of typography. Details in every sight, elegance in every space.',
     // use i18n title/subtitle/description from src/i18n/ui.ts instead of static ones above
@@ -30,19 +31,12 @@ export const themeConfig: ThemeConfig = {
     // default theme mode
     mode: 'light', // light | dark | auto
     light: {
-      // primary color
-      // used for title, hover, etc
-      // oklch color picker: https://oklch.com/
-      primary: 'oklch(25% 0.005 298)',
-      // secondary color
-      // used for post text
-      secondary: 'oklch(40% 0.005 298)',
-      // background color
-      background: 'oklch(96% 0.005 298)',
-      // highlight color
-      // used for navbar, selected text, etc
-      highlight: 'oklch(0.93 0.195089 103.2532 / 0.5)', // rgba(255,235,0,0.5)
+      primary:   'oklch(28% 0.006 298)',
+      secondary: 'oklch(46% 0.006 298)',
+      background:'oklch(94% 0.006 298)',
+      highlight: 'oklch(0.93 0.16 103 / 0.30)',
     },
+
     dark: {
       // primary color
       primary: 'oklch(92% 0.005 298)',

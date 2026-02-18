@@ -46,6 +46,14 @@ export function isSearchPage(path: string) {
   return matchPageType(path, 'search')
 }
 
+export function isArchivePage(path: string) {
+  return matchPageType(path, 'archive')
+}
+
+export function isLinksPage(path: string) {
+  return matchPageType(path, 'links')
+}
+
 // Returns page context with language, page types and localization helper
 export function getPageInfo(path: string) {
   const currentLang = getLangFromPath(path)
@@ -54,6 +62,8 @@ export function getPageInfo(path: string) {
   const isTag = isTagPage(path)
   const isAbout = isAboutPage(path)
   const isSearch = isSearchPage(path)
+  const isArchive = isArchivePage(path)
+  const isLinks = isLinksPage(path)
 
   return {
     currentLang,
@@ -62,6 +72,8 @@ export function getPageInfo(path: string) {
     isTag,
     isAbout,
     isSearch,
+    isArchive,
+    isLinks,
     getLocalizedPath: (targetPath: string) =>
       getLocalizedPath(targetPath, currentLang),
   }

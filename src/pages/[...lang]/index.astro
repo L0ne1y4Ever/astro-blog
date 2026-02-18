@@ -14,22 +14,359 @@ export async function getStaticPaths() {
 const currentLang = getLangFromLocale(Astro.currentLocale)
 const pinnedPosts = await getPinnedPosts(currentLang)
 const postsByYear = await getPostsByYear(currentLang)
+const categoryFilters = [
+  {
+    label: '杂谈',
+    value: '杂谈',
+    icon: '<svg viewBox="0 0 20 20" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" d="M4 5.5h12a2 2 0 0 1 2 2v6.5a2 2 0 0 1-2 2H8l-4 3v-3H4a2 2 0 0 1-2-2V7.5a2 2 0 0 1 2-2Z"/></svg>',
+  },
+  {
+    label: '代码日常',
+    value: '代码日常',
+    icon: '<svg viewBox="0 0 20 20" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" d="m7.5 6-4 4 4 4M12.5 6l4 4-4 4M9 15.5l2-11"/></svg>',
+  },
+  {
+    label: '碎碎念',
+    value: '碎碎念',
+    icon: '<svg viewBox="0 0 20 20" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" d="M3.5 6.5h13M3.5 10h13M3.5 13.5h9"/></svg>',
+  },
+  {
+    label: '生活随笔',
+    value: '生活随笔',
+    icon: '<svg viewBox="0 0 20 20" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" d="M10 3.5c3.5 2.2 4.5 6.2 2.8 9.1C11 15.5 7.5 16.5 5.5 14c2.7 0 4.8-1.2 5.7-3.1 1-2.2.3-4.8-1.2-6.3Z"/></svg>',
+  },
+  {
+    label: '项目复盘',
+    value: '项目复盘',
+    icon: '<svg viewBox="0 0 20 20" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" d="M6 3.5h8l2 2V16a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 4 16V5a1.5 1.5 0 0 1 2-1.5Z"/><path fill="none" stroke="currentColor" stroke-width="1.5" d="M7.5 8.5h5M7.5 12h5"/></svg>',
+  },
+]
 ---
 
 <Layout>
-  <!-- Pinned Posts -->
-  {pinnedPosts.length > 0 && (
-    <section class="mb-7.5">
-      <div class="uno-decorative-line" />
-      <PostList posts={pinnedPosts} lang={currentLang} pinned={true} />
+  <div data-posts-root>
+    <section class="post-filter font-navbar">
+      <div class="post-filter-list">
+        <details class="post-filter-dropdown" data-filter-dropdown>
+          <summary class="post-filter-trigger" role="button" aria-label="全部分类">
+            <span class="post-filter-icon" aria-hidden="true">
+              <svg viewBox="0 0 20 20"><path fill="none" stroke="currentColor" stroke-width="1.5" d="M4.5 5.5h11a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H7.5l-3.5 3v-3h-0.5a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2Z"/></svg>
+            </span>
+            <span class="post-filter-label">全部分类</span>
+            <span class="post-filter-caret" aria-hidden="true">
+              <svg viewBox="0 0 20 20"><path fill="none" stroke="currentColor" stroke-width="1.5" d="m5.5 8 4.5 4.5L14.5 8"/></svg>
+            </span>
+          </summary>
+          <div class="post-filter-menu" role="listbox" aria-label="分类列表">
+            <button class="post-filter-option is-active" type="button" data-filter="all" role="option" aria-selected="true">
+              <span class="post-filter-icon" aria-hidden="true">
+                <svg viewBox="0 0 20 20"><path fill="none" stroke="currentColor" stroke-width="1.5" d="M4.5 5.5h11a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H7.5l-3.5 3v-3h-0.5a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2Z"/></svg>
+              </span>
+              全部分类
+            </button>
+            {categoryFilters.map(category => (
+              <button class="post-filter-option" type="button" data-filter={category.value} role="option" aria-selected="false">
+                <span class="post-filter-icon" aria-hidden="true" set:html={category.icon} />
+                {category.label}
+              </button>
+            ))}
+          </div>
+        </details>
+      </div>
     </section>
-  )}
 
-  <!-- Regular Posts -->
-  {[...postsByYear.entries()].map(([_year, posts]) => (
-    <section class="mb-7.5">
-      <div class="uno-decorative-line" />
-      <PostList posts={posts} lang={currentLang} />
-    </section>
-  ))}
+    <!-- Pinned Posts -->
+    {pinnedPosts.length > 0 && (
+      <section class="post-year-section post-year-section--pinned mb-7.5">
+        <div class="uno-decorative-line" />
+        <PostList posts={pinnedPosts} lang={currentLang} pinned={true} />
+      </section>
+    )}
+
+    <!-- Regular Posts -->
+    {[...postsByYear.entries()].map(([year, posts]) => (
+      <section class="post-year-section mb-7.5" data-year={year}>
+        <div class="uno-decorative-line" />
+        <PostList posts={posts} lang={currentLang} />
+      </section>
+    ))}
+  </div>
 </Layout>
+
+<script is:inline data-astro-rerun>
+  (function () {
+    function initPostFilters() {
+      const root = document.querySelector('[data-posts-root]')
+      if (!root) return
+
+      const dropdown = root.querySelector('[data-filter-dropdown]')
+      const triggerLabel = root.querySelector('.post-filter-trigger .post-filter-label')
+      const buttons = Array.from(root.querySelectorAll('.post-filter-option[data-filter]'))
+      const items = Array.from(root.querySelectorAll('.post-item'))
+      const sections = Array.from(root.querySelectorAll('.post-year-section'))
+
+      const applyFilter = (filter) => {
+        buttons.forEach((button) => {
+          const isActive = button.dataset.filter === filter
+          button.classList.toggle('is-active', isActive)
+          button.setAttribute('aria-selected', isActive ? 'true' : 'false')
+          if (isActive && triggerLabel) {
+            triggerLabel.textContent = button.textContent?.trim() || '全部分类'
+          }
+        })
+
+        items.forEach((item) => {
+          const tags = (item.dataset.tags || '').split(',').filter(Boolean)
+          const match = filter === 'all' || tags.includes(filter)
+          item.classList.toggle('is-hidden', !match)
+          item.setAttribute('aria-hidden', match ? 'false' : 'true')
+        })
+
+        sections.forEach((section) => {
+          const visibleItems = section.querySelectorAll('.post-item:not(.is-hidden)')
+          section.classList.toggle('is-hidden', visibleItems.length === 0)
+        })
+      }
+
+      buttons.forEach((button) => {
+        button.addEventListener('click', () => {
+          applyFilter(button.dataset.filter || 'all')
+          if (dropdown) dropdown.removeAttribute('open')
+        })
+      })
+
+      applyFilter('all')
+    }
+
+    document.addEventListener('astro:page-load', initPostFilters)
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initPostFilters)
+    }
+    else {
+      initPostFilters()
+    }
+  })()
+</script>
+
+<style>
+  :root {
+    --post-control-h: 1.85rem; /* 想更紧凑可改 1.75rem */
+  }
+
+  /* ===== 顶部筛选条 ===== */
+  .post-filter {
+    display: flex;
+    align-items: center;
+    margin-bottom: 2rem;
+  }
+
+  .post-filter-list {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    font-size: 0.9rem;
+    color: oklch(var(--un-preset-theme-colors-secondary) / 0.75);
+  }
+
+  /* ===== details/summary 控件：与归档页一致 ===== */
+  .post-filter-dropdown {
+    position: relative;
+    display: inline-flex;
+    align-items: stretch;
+    height: var(--post-control-h);
+  }
+
+  .post-filter-trigger {
+    box-sizing: border-box;
+    height: 100%;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+
+    padding: 0 0.5rem;
+    border-radius: 0.55rem;
+
+    /* 关键：透明边框占位，避免 hover 时高度变化导致“跳” */
+    border: 1px solid transparent;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+
+    letter-spacing: 0.02em;
+    line-height: 1;
+    margin: 0;
+    user-select: none;
+    list-style: none;
+
+    transition: color 180ms ease, background-color 180ms ease, border-color 180ms ease;
+  }
+
+  .post-filter-trigger::-webkit-details-marker {
+    display: none;
+  }
+
+  .post-filter-trigger:hover {
+    color: oklch(var(--un-preset-theme-colors-primary) / 0.9);
+    background-color: oklch(var(--un-preset-theme-colors-secondary) / 0.08);
+    border-color: oklch(var(--un-preset-theme-colors-secondary) / 0.18);
+  }
+
+  .post-filter-icon {
+    width: 0.95rem;
+    height: 0.95rem;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .post-filter-icon svg {
+    width: 0.95rem;
+    height: 0.95rem;
+  }
+
+  .post-filter-caret {
+    margin-left: 0.15rem;
+    opacity: 0.6;
+    transition: transform 180ms ease;
+  }
+
+  .post-filter-dropdown[open] .post-filter-caret {
+    transform: rotate(180deg);
+  }
+
+  /* ===== 下拉菜单：贴近按钮 + 可滚动 ===== */
+  .post-filter-menu {
+    position: absolute;
+    top: 100%;
+    margin-top: 0.12rem; /* 这里就是“按钮与菜单”的距离 */
+    left: 0;
+
+    min-width: 11rem;
+    max-height: 320px;
+    overflow: auto;
+
+    background: oklch(var(--un-preset-theme-colors-background) / 0.98);
+    border: 1px solid oklch(var(--un-preset-theme-colors-secondary) / 0.2);
+    border-radius: 0.75rem;
+    padding: 0.28rem;
+
+    box-shadow: 0 18px 40px oklch(0 0 0 / 0.35);
+    display: grid;
+    gap: 0.1rem;
+    z-index: 20;
+  }
+
+  .post-filter-dropdown[open] .post-filter-menu {
+    animation: postMenuIn 160ms ease-out;
+    transform-origin: top left;
+  }
+
+  @keyframes postMenuIn {
+    from {
+      opacity: 0;
+      transform: translateY(-0.35rem) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  .post-filter-option {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+
+    padding: 0.32rem 0.45rem;
+    border-radius: 0.55rem;
+    border: none;
+    background: transparent;
+    color: inherit;
+
+    cursor: pointer;
+    text-align: left;
+    font-size: 0.88rem;
+    line-height: 1.2;
+
+    transition: background-color 180ms ease, color 180ms ease;
+  }
+
+  .post-filter-option:hover,
+  .post-filter-option.is-active {
+    background-color: oklch(var(--un-preset-theme-colors-secondary) / 0.12);
+    color: oklch(var(--un-preset-theme-colors-primary) / 0.95);
+  }
+
+  /* 滚动条更细一点（可选） */
+  .post-filter-menu::-webkit-scrollbar {
+    width: 8px;
+  }
+  .post-filter-menu::-webkit-scrollbar-thumb {
+    border: 2px solid transparent;
+    background-clip: content-box;
+    background: oklch(var(--un-preset-theme-colors-secondary) / 0.2);
+    border-radius: 999px;
+  }
+
+  /* 键盘可访问性 */
+  .post-filter-trigger:focus-visible,
+  .post-filter-option:focus-visible {
+    outline: 2px solid oklch(var(--un-preset-theme-colors-primary) / 0.45);
+    outline-offset: 2px;
+  }
+
+  /* ===== 文章分组隐藏动画（保留你原逻辑） ===== */
+  .post-year-section {
+    transition: opacity 220ms ease, transform 220ms ease, max-height 220ms ease;
+    max-height: 999px;
+  }
+
+  .post-year-section.is-hidden {
+    opacity: 0;
+    max-height: 0;
+    margin-top: 0;
+    margin-bottom: 0 !important;
+    pointer-events: none;
+    transform: translateY(-0.6rem);
+  }
+
+  :global(.post-item) {
+    max-height: 16rem;
+    overflow: hidden;
+    transition: opacity 220ms ease, max-height 220ms ease, transform 220ms ease, margin 220ms ease;
+  }
+
+  :global(.post-item.is-hidden) {
+    opacity: 0;
+    max-height: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    transform: translateY(-0.4rem);
+    pointer-events: none;
+  }
+
+  /* ===== 手机适配 ===== */
+  @media (max-width: 768px) {
+    .post-filter-list {
+      gap: 0.45rem;
+    }
+
+    .post-filter-menu {
+      min-width: 10rem;
+      max-height: 260px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .post-year-section,
+    :global(.post-item) {
+      transition: none;
+    }
+  }
+
+  :global(html.reduce-motion) .post-year-section,
+  :global(html.reduce-motion) .post-item {
+    transition: none;
+  }
+</style>
+

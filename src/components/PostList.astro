@@ -20,13 +20,15 @@ const isHome = isHomePage(Astro.url.pathname)
 <ul>
   {posts.map((post) => {
     const slug = post.data.abbrlink || post.id
+    const tags = post.data.tags ?? []
 
     return (
       <li
         class:list={[
-          'mb-5.5',
-          isHome ? 'lg:mb-10' : '',
+          'post-item mb-4',
+          isHome ? 'lg:mb-6' : '',
         ]}
+        data-tags={tags.join(',')}
       >
         {/* post title */}
         <h3 class="inline transition-colors hover:c-primary">

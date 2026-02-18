@@ -8,12 +8,16 @@ interface Translation {
   tags: string
   about: string
   search: string
+  archive: string
+  links: string
+  more: string
   searchPlaceholder: string
   searchNoResults: string
   searchClear: string
   searchOneResult: string
   searchManyResults: string
   searchNotReady: string
+  linksEmpty: string
   toc: string
 }
 
@@ -26,12 +30,16 @@ export const ui: Record<Language, Translation> = {
     tags: '标签',
     about: '关于',
     search: '搜索',
+    archive: '归档',
+    links: '友链',
+    more: '更多',
     searchPlaceholder: '搜索文章、标签或内容吧~',
     searchNoResults: '没有找到相关结果哦',
     searchClear: '清除',
     searchOneResult: '1 条结果',
     searchManyResults: '{COUNT} 条结果',
     searchNotReady: '搜索索引尚未生成，请先执行构建命令。',
+    linksEmpty: '暂无友链',
     toc: '目录',
   },
 }

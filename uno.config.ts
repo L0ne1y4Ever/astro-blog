@@ -11,6 +11,10 @@ import { themeConfig } from './src/config.ts'
 
 const { light, dark } = themeConfig.color
 
+
+const fontSans = ['Inter Variable', 'Noto Sans SC Variable','LXGW WenKai Screen','system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'Noto Sans', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', 'Arial', 'sans-serif']
+const fontMono = ['JetBrains Mono Variable', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'Liberation Mono', 'Courier New', 'monospace']
+
 export default defineConfig({
   presets: [
     presetWind3(),
@@ -40,10 +44,12 @@ export default defineConfig({
       caution: 'oklch(50.5% 0.213 27.518 / 0.8)', // red-700
     },
     fontFamily: {
-      title: ['Snell-Black', 'EarlySummer-Subset', 'EarlySummer', 'ui-serif', 'Georgia', 'Cambria', 'Times New Roman', 'Times', 'serif'],
-      navbar: ['STIX-Italic', 'EarlySummer-Subset', 'EarlySummer', 'ui-serif', 'Georgia', 'Cambria', 'Times New Roman', 'Times', 'serif'],
-      time: ['Snell-Bold', 'ui-serif', 'Georgia', 'Cambria', 'Times New Roman', 'Times', 'serif'],
-      serif: ['STIX', 'EarlySummer', 'ui-serif', 'Georgia', 'Cambria', 'Times New Roman', 'Times', 'serif'],
+      sans: fontSans,
+      mono: fontMono,
+      title: fontSans,
+      navbar: fontSans,
+      time: fontSans,
+      serif: fontSans,
     },
   },
   rules: [

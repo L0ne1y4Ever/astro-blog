@@ -1,4 +1,6 @@
 import type { CollectionEntry } from 'astro:content'
+import { existsSync, statSync } from 'node:fs'
+import path from 'node:path'
 import type { Language } from '@/i18n/config'
 import type { Post } from '@/types'
 import { getCollection, render } from 'astro:content'
@@ -6,6 +8,40 @@ import { defaultLocale } from '@/config'
 import { memoize } from '@/utils/cache'
 
 const metaCache = new Map<string, { minutes: number }>()
+const postsRoot = path.resolve(process.cwd(), 'src/content/posts')
+
+function resolvePostFilePath(id: string) {
+  const normalized = id.replace(/\\/g, '/')
+  const basePath = path.resolve(postsRoot, normalized)
+  if (/\.(md|mdx)$/.test(basePath) && existsSync(basePath)) {
+    return basePath
+  }
+  const mdPath = `${basePath}.md`
+  if (existsSync(mdPath)) {
+    return mdPath
+  }
+  const mdxPath = `${basePath}.mdx`
+  if (existsSync(mdxPath)) {
+    return mdxPath
+  }
+  return ''
+}
+
+function getPostUpdatedAt(post: CollectionEntry<'posts'>) {
+  if (post.data.updated) {
+    return post.data.updated
+  }
+  const filePath = resolvePostFilePath(post.id)
+  if (!filePath) {
+    return post.data.published
+  }
+  try {
+    return statSync(filePath).mtime
+  }
+  catch {
+    return post.data.published
+  }
+}
 
 /**
  * Add metadata including reading time to a post
@@ -87,7 +123,15 @@ async function _getPosts(lang?: Language) {
     },
   )
 
-  const enhancedPosts = await Promise.all(filteredPosts.map(addMetaToPost))
+  const normalizedPosts = filteredPosts.map(post => ({
+    ...post,
+    data: {
+      ...post.data,
+      updated: getPostUpdatedAt(post),
+    },
+  }))
+
+  const enhancedPosts = await Promise.all(normalizedPosts.map(addMetaToPost))
 
   return enhancedPosts.sort((a, b) =>
     b.data.published.valueOf() - a.data.published.valueOf(),

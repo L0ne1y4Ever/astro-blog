@@ -2,8 +2,9 @@
 title: hello,SlowMo
 published: 2026-02-14T16:02:12.180Z
 description: '这是我的第一篇博客'
-updated: ''
+updated: 2026-02-18T10:00:00.000Z
 tags:
+  - 生活随笔
   - 测试
 draft: false
 pin: 0
