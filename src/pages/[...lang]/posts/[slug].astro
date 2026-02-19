@@ -92,7 +92,7 @@ const updatedDate = getPostUpdatedAt(post)
       <!-- Go Back Button On Desktop -->
       <BackButton />
       <!-- Title -->
-      <h1 class="post-title">
+      <h1 class="post-title" data-pagefind-meta="title">
         <span
           transition:name={`post-${slug}${currentLang ? `-${currentLang}` : ''}`}
           data-disable-theme-toggle-transition
@@ -116,7 +116,11 @@ const updatedDate = getPostUpdatedAt(post)
       />
     </div>
     <!-- TOC -->
-    {post.data.toc && <TOC headings={headings} />}
+    {post.data.toc && (
+      <div data-pagefind-ignore>
+        <TOC headings={headings} />
+      </div>
+    )}
     <!-- Content -->
     <div id="post-content">
       <Content />
@@ -124,14 +128,18 @@ const updatedDate = getPostUpdatedAt(post)
       <div id="post-copyright" />
       <!-- Tag List -->
       {post.data.tags?.length > 0 && (
-        <div class="mt-12.6 uno-decorative-line" />
-        <TagList
-          tags={post.data.tags}
-          lang={currentLang}
-        />
+        <div data-pagefind-ignore>
+          <div class="mt-12.6 uno-decorative-line" />
+          <TagList
+            tags={post.data.tags}
+            lang={currentLang}
+          />
+        </div>
       )}
       <!-- Comment -->
-      <Comment />
+      <div data-pagefind-ignore>
+        <Comment />
+      </div>
     </div>
   </article>
 </Layout>
