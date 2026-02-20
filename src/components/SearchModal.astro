@@ -20,14 +20,14 @@ function normalizePagefindText(text: string) {
 }
 
 const pagefindTranslations = {
-  placeholder: normalizePagefindText(currentUI.searchPlaceholder ?? 'Search'),
+  placeholder: normalizePagefindText(currentUI.searchPlaceholder ?? '键入开始搜索'),
   search_label: normalizePagefindText(currentUI.search ?? 'Search'),
-  clear_search: normalizePagefindText(currentUI.searchClear ?? 'Clear'),
-  zero_results: normalizePagefindText(currentUI.searchNoResults ?? 'No results'),
-  one_result: normalizePagefindText(currentUI.searchOneResult ?? '[COUNT] result'),
-  many_results: normalizePagefindText(currentUI.searchManyResults ?? '[COUNT] results'),
+  clear_search: normalizePagefindText(currentUI.searchClear ?? '清除'),
+  zero_results: normalizePagefindText(currentUI.searchNoResults ?? '没有找到相关内容'),
+  one_result: normalizePagefindText(currentUI.searchOneResult ?? '[COUNT] 条结果'),
+  many_results: normalizePagefindText(currentUI.searchManyResults ?? '[COUNT] 条结果'),
 }
-const pagefindNotReady = currentUI.searchNotReady ?? 'Search index is not ready.'
+const pagefindNotReady = currentUI.searchNotReady ?? '搜索索引未准备好。'
 ---
 
 <div
@@ -45,35 +45,20 @@ const pagefindNotReady = currentUI.searchNotReady ?? 'Search index is not ready.
     aria-modal="true"
     aria-label={currentUI.search ?? 'Search'}
   >
-    <button
-      class="search-modal__close"
-      type="button"
-      data-search-close
-      aria-label="关闭"
-    >
+    <button class="search-modal__close visually-hidden" type="button" data-search-close>
       ×
     </button>
 
     <div class="search-modal__content">
-      <div
-        id="pagefind-modal"
-        class="pagefind pagefind-modal"
-        aria-label={currentUI.search}
-      >
+      <div id="pagefind-modal" class="pagefind pagefind-modal">
         <div class="pagefind-fallback-ui">
-          <label class="pagefind-fallback-label" for="pagefind-modal-fallback-input">
-            {currentUI.search ?? 'Search'}
-          </label>
           <input
             id="pagefind-modal-fallback-input"
             class="pagefind-fallback-input"
             type="search"
-            placeholder={currentUI.searchPlaceholder ?? 'Search'}
+            placeholder={pagefindTranslations.placeholder}
             disabled
           />
-          <p class="pagefind-fallback">
-            {currentUI.searchNotReady ?? 'Search index is not ready.'}
-          </p>
         </div>
       </div>
     </div>
@@ -90,130 +75,294 @@ const pagefindNotReady = currentUI.searchNotReady ?? 'Search index is not ready.
     const modal = document.querySelector('[data-search-modal]')
     if (!modal) return
 
-    const notReadyText = modal.getAttribute('data-not-ready') || 'Search index is not ready.'
-    const autoOpen = modal.getAttribute('data-auto-open') === '1'
-
-    let lastActive = null
-    let pagefindReady = false
-    let pagefindLoading = null
-
-    const setOpen = (nextOpen) => {
-      modal.dataset.open = nextOpen ? '1' : '0'
-      modal.setAttribute('aria-hidden', nextOpen ? 'false' : 'true')
-      document.documentElement.classList.toggle('search-modal-open', nextOpen)
+    const state = globalThis.__searchModalState || {
+      bound: false,
+      modal: null,
+      lastActive: null,
+      pagefindReady: false,
+      pagefindLoading: null,
+      resizeObserver: null,
+      pendingResizeFrame: null,
+      lastDialogHeight: 0,
+      pagefindBase,
+      pagefindTranslations,
+      isProd,
+      notReadyText: '',
+      autoOpen: false,
+      setOpen: null,
+      ensurePagefind: null,
+      focusInput: null,
+      openModal: null,
+      closeModal: null,
+      handleClick: null,
+      handleKeydown: null,
+      handleSearchOpen: null,
+      handleSearchIntent: null,
+      syncDialogHeight: null,
+      scheduleDialogResize: null,
     }
 
-    const ensurePagefind = async () => {
-      if (!isProd || pagefindReady) return
-      if (pagefindLoading) return pagefindLoading
+    const previousModal = state.modal
+    state.modal = modal
+    state.pagefindBase = pagefindBase
+    state.pagefindTranslations = pagefindTranslations
+    state.isProd = isProd
+    state.notReadyText = modal.getAttribute('data-not-ready') || 'Search index is not ready.'
+    state.autoOpen = modal.getAttribute('data-auto-open') === '1'
 
-      const container = modal.querySelector('#pagefind-modal')
-      if (!container) return
+    if (previousModal && previousModal !== modal) {
+      state.pagefindReady = false
+      state.pagefindLoading = null
+      if (state.resizeObserver) {
+        state.resizeObserver.disconnect()
+        state.resizeObserver = null
+      }
+    }
 
-      const fallbackMarkup = container.innerHTML
+    globalThis.__searchModalState = state
 
-      pagefindLoading = (async () => {
-        try {
-          let link = document.querySelector('link[data-pagefind-ui]')
-          if (!link) {
-            link = document.createElement('link')
-            link.rel = 'stylesheet'
-            link.href = `${pagefindBase}/pagefind-ui.css`
-            link.dataset.pagefindUi = '1'
-            document.head.appendChild(link)
+    const getModal = () => state.modal
+
+    if (!state.bound) {
+      state.setOpen = (nextOpen) => {
+        const modal = getModal()
+        if (!modal) return
+        modal.dataset.open = nextOpen ? '1' : '0'
+        modal.setAttribute('aria-hidden', nextOpen ? 'false' : 'true')
+        document.documentElement.classList.toggle('search-modal-open', nextOpen)
+      }
+
+      state.ensurePagefind = async () => {
+        if (!state.isProd || state.pagefindReady) return
+        if (state.pagefindLoading) return state.pagefindLoading
+
+        const modal = getModal()
+        if (!modal) return
+        const container = modal.querySelector('#pagefind-modal')
+        if (!container) return
+
+        const fallbackMarkup = container.innerHTML
+
+        state.pagefindLoading = (async () => {
+          try {
+            let link = document.querySelector('link[data-pagefind-ui]')
+            if (!link) {
+              link = document.createElement('link')
+              link.rel = 'stylesheet'
+              link.href = `${state.pagefindBase}/pagefind-ui.css`
+              link.dataset.pagefindUi = '1'
+              document.head.appendChild(link)
+            }
+
+            await import(`${state.pagefindBase}/pagefind-ui.js`)
+
+            const { PagefindUI } = globalThis
+            if (!PagefindUI) throw new Error('PagefindUI is not available on globalThis')
+
+            container.innerHTML = ''
+            void new PagefindUI({
+              element: '#pagefind-modal',
+              showSubResults: true,
+              debounceTimeoutMs: 320,
+              excerptLength: 18,
+              resetStyles: false,
+              translations: state.pagefindTranslations,
+            })
+            state.pagefindReady = true
           }
+          catch (error) {
+            if (!container.innerHTML) {
+              container.innerHTML = fallbackMarkup || `<p class="pagefind-fallback">${state.notReadyText}</p>`
+            }
+            console.warn('[Pagefind] Failed to load search assets:', error)
+          }
+          finally {
+            if (!state.pagefindReady) {
+              state.pagefindLoading = null
+            }
+          }
+        })()
 
-          await import(`${pagefindBase}/pagefind-ui.js`)
+        return state.pagefindLoading
+      }
 
-          const { PagefindUI } = globalThis
-          if (!PagefindUI) throw new Error('PagefindUI is not available on globalThis')
+      state.focusInput = () => {
+        const modal = getModal()
+        if (!modal) return
+        const input =
+          modal.querySelector('.pagefind-ui__search-input') ||
+          modal.querySelector('.pagefind-fallback-input')
+        if (input) input.focus()
+      }
 
-          container.innerHTML = ''
-          void new PagefindUI({
-            element: '#pagefind-modal',
-            showSubResults: true,
-            resetStyles: false,
-            translations: pagefindTranslations,
+      state.syncDialogHeight = () => {
+        const modal = getModal()
+        if (!modal || modal.dataset.open !== '1') return
+        const dialog = modal.querySelector('.search-modal__dialog')
+        const innerContainer = modal.querySelector('#pagefind-modal')
+        if (!dialog || !innerContainer) return
+
+        const maxH = window.innerHeight * 0.8
+        const targetH = Math.min(innerContainer.scrollHeight + 2, maxH)
+        if (Math.abs(targetH - state.lastDialogHeight) < 1) return
+
+        state.lastDialogHeight = targetH
+        dialog.style.height = `${targetH}px`
+      }
+
+      state.scheduleDialogResize = () => {
+        if (state.pendingResizeFrame !== null) return
+        state.pendingResizeFrame = requestAnimationFrame(() => {
+          state.pendingResizeFrame = null
+          state.syncDialogHeight()
+        })
+      }
+
+      state.openModal = async () => {
+        const modal = getModal()
+        if (!modal) return
+        if (modal.dataset.open === '1') return
+        state.lastActive = document.activeElement
+
+        state.setOpen(true)
+
+        // === 核心动画逻辑：开启 ResizeObserver ===
+        const dialog = modal.querySelector('.search-modal__dialog')
+        const innerContainer = modal.querySelector('#pagefind-modal')
+
+        if (dialog && innerContainer && typeof ResizeObserver !== 'undefined') {
+          if (state.resizeObserver) {
+            state.resizeObserver.disconnect()
+          }
+          state.resizeObserver = new ResizeObserver(() => {
+            if (modal.dataset.open !== '1') return
+            state.scheduleDialogResize()
           })
-          pagefindReady = true
+          // 开始监听内容高度
+          state.resizeObserver.observe(innerContainer)
         }
-        catch (error) {
-          if (!container.innerHTML) {
-            container.innerHTML = fallbackMarkup || `<p class="pagefind-fallback">${notReadyText}</p>`
-          }
-          console.warn('[Pagefind] Failed to load search assets:', error)
+        state.scheduleDialogResize()
+
+        await state.ensurePagefind()
+        state.scheduleDialogResize()
+        requestAnimationFrame(() => state.focusInput())
+      }
+
+      state.closeModal = () => {
+        const modal = getModal()
+        if (!modal) return
+        if (modal.dataset.open !== '1') return
+        state.setOpen(false)
+
+        // 关闭时断开监听，并重置高度为初始状态 (单行搜索框的高度)
+        if (state.resizeObserver) {
+          state.resizeObserver.disconnect()
+          state.resizeObserver = null
         }
-      })()
+        if (state.pendingResizeFrame !== null) {
+          cancelAnimationFrame(state.pendingResizeFrame)
+          state.pendingResizeFrame = null
+        }
+        const dialog = modal.querySelector('.search-modal__dialog')
+        if (dialog) dialog.style.height = ''
+        state.lastDialogHeight = 0
 
-      return pagefindLoading
-    }
-
-    const focusInput = () => {
-      const input =
-        modal.querySelector('.pagefind-ui__search-input') ||
-        modal.querySelector('.pagefind-fallback-input')
-      if (input) input.focus()
-    }
-
-    const openModal = async () => {
-      if (modal.dataset.open === '1') return
-      lastActive = document.activeElement
-      setOpen(true)
-      await ensurePagefind()
-      requestAnimationFrame(() => focusInput())
-    }
-
-    const closeModal = () => {
-      if (modal.dataset.open !== '1') return
-      setOpen(false)
-      if (lastActive && typeof lastActive.focus === 'function') {
-        lastActive.focus()
-      }
-    }
-
-    document.addEventListener('click', (event) => {
-      const target = event.target
-      if (!(target instanceof Element)) return
-
-      const trigger = target.closest('[data-search-open]')
-      if (trigger) {
-        event.preventDefault()
-        void openModal()
-        return
+        if (state.lastActive && typeof state.lastActive.focus === 'function') {
+          state.lastActive.focus()
+        }
       }
 
-      if (target.closest('[data-search-close]')) {
-        closeModal()
+      state.handleClick = (event) => {
+        const target = event.target
+        if (!(target instanceof Element)) return
+
+        const trigger = target.closest('[data-search-open]')
+        if (trigger) {
+          event.preventDefault()
+          void state.openModal()
+          return
+        }
+
+        if (target.closest('[data-search-close]')) {
+          state.closeModal()
+        }
       }
-    })
 
-    document.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape') closeModal()
-    })
+      state.handleKeydown = (event) => {
+        if (event.key === 'Escape') state.closeModal()
+      }
 
-    document.addEventListener('search-modal-open', () => void openModal())
+      state.handleSearchOpen = () => void state.openModal()
+      state.handleSearchIntent = (event) => {
+        const target = event.target
+        if (!(target instanceof Element)) return
+        if (!target.closest('[data-search-open]')) return
 
-    if (autoOpen) {
-      document.addEventListener('astro:page-load', () => void openModal())
+        document.removeEventListener('pointerover', state.handleSearchIntent)
+        document.removeEventListener('focusin', state.handleSearchIntent)
+        void state.ensurePagefind()
+      }
+
+      document.addEventListener('click', state.handleClick)
+      document.addEventListener('keydown', state.handleKeydown)
+      document.addEventListener('search-modal-open', state.handleSearchOpen)
+      document.addEventListener('pointerover', state.handleSearchIntent, { passive: true })
+      document.addEventListener('focusin', state.handleSearchIntent)
+      window.addEventListener('resize', state.scheduleDialogResize, { passive: true })
+
+      state.bound = true
+    }
+
+    if (state.autoOpen) {
       if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => void openModal())
+        document.addEventListener('DOMContentLoaded', () => void state.openModal(), { once: true })
       } else {
-        void openModal()
+        void state.openModal()
       }
     }
   })()
 </script>
 
 <style is:global>
+  /* ========================================================
+     1. 全局遮罩与位置
+     ======================================================== */
   .search-modal {
+    --search-modal-bg: oklch(var(--un-preset-theme-colors-background) / 0.94);
+    --search-modal-text: oklch(var(--un-preset-theme-colors-primary) / 0.96);
+    --search-modal-muted: oklch(var(--un-preset-theme-colors-secondary) / 0.82);
+    --search-modal-border: oklch(var(--un-preset-theme-colors-secondary) / 0.3);
+    --search-modal-border-active: oklch(var(--un-preset-theme-colors-primary) / 0.45);
+    --search-modal-hover: oklch(var(--un-preset-theme-colors-secondary) / 0.1);
+    --search-modal-tag-bg: oklch(var(--un-preset-theme-colors-secondary) / 0.14);
+    --search-modal-tag-text: oklch(var(--un-preset-theme-colors-primary) / 0.74);
+    --search-modal-mark: oklch(var(--un-preset-theme-colors-primary));
+    --search-modal-backdrop: rgba(15, 23, 42, 0.24);
+    --search-modal-search-icon: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none" stroke="rgba(31,41,55,0.55)" stroke-width="1.8"><circle cx="9" cy="9" r="5.5" /><path d="M13 13l4 4" /></svg>');
     position: fixed;
     inset: 0;
-    display: grid;
-    place-items: center;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding-top: 15vh;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 220ms ease;
-    z-index: 999;
+    transition: opacity 0.3s ease;
+    z-index: 9999;
+  }
+
+  :global(html.dark) .search-modal {
+    --search-modal-bg: #1c1e26;
+    --search-modal-text: rgba(244, 246, 255, 0.95);
+    --search-modal-muted: rgba(219, 223, 232, 0.64);
+    --search-modal-border: rgba(59, 130, 246, 0.5);
+    --search-modal-border-active: rgba(59, 130, 246, 0.95);
+    --search-modal-hover: rgba(255, 255, 255, 0.08);
+    --search-modal-tag-bg: rgba(255, 255, 255, 0.12);
+    --search-modal-tag-text: rgba(244, 246, 255, 0.82);
+    --search-modal-mark: #60a5fa;
+    --search-modal-backdrop: rgba(0, 0, 0, 0.42);
+    --search-modal-search-icon: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1.8"><circle cx="9" cy="9" r="5.5" /><path d="M13 13l4 4" /></svg>');
   }
 
   .search-modal[data-open='1'] {
@@ -224,166 +373,241 @@ const pagefindNotReady = currentUI.searchNotReady ?? 'Search index is not ready.
   .search-modal__backdrop {
     position: absolute;
     inset: 0;
-    background: oklch(0 0 0 / 0.45);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    background: var(--search-modal-backdrop);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
   }
 
+  /* ========================================================
+     2. 最外层弹窗：高度动画的承载者
+     ======================================================== */
   .search-modal__dialog {
     position: relative;
-    width: min(72rem, 92vw);
-    max-height: 84vh;
-    background: oklch(var(--un-preset-theme-colors-background) / 0.92);
-    border: 1px solid oklch(var(--un-preset-theme-colors-primary) / 0.35);
-    border-radius: 1rem;
-    box-shadow: 0 24px 60px oklch(0 0 0 / 0.45);
-    padding: 1.1rem 1.1rem 1.2rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
+    width: min(48rem, 92vw);
+    background: var(--search-modal-bg);
+    border: 1px solid var(--search-modal-border);
+    border-radius: 0.8rem;
+    box-shadow: 0 10px 34px rgba(0, 0, 0, 0.48);
+    padding: 0; 
     z-index: 1;
+    contain: layout paint;
+    
+    /* === 动画核心设定 === */
+    height: 3.8rem; /* 初始状态：仅输入框的高度 */
+    overflow: hidden; /* 防止内容突围 */
+    display: flex; /* 让内部可以正确滚动 */
+    flex-direction: column;
+    
+    /* 高级阻尼动画曲线，带来 Apple 级别的丝滑回弹感 */
+    transform: translateY(-10px) scale(0.98);
+    transition: height 0.34s cubic-bezier(0.32, 0.72, 0, 1),
+                transform 0.3s cubic-bezier(0.32, 0.72, 0, 1),
+                box-shadow 0.2s ease;
+    will-change: transform;
   }
 
-  .search-modal__close {
-    position: absolute;
-    top: 0.5rem;
-    right: 0.6rem;
-    width: 2rem;
-    height: 2rem;
-    border: none;
-    border-radius: 0.6rem;
-    background: transparent;
-    color: oklch(var(--un-preset-theme-colors-secondary) / 0.8);
-    font-size: 1.3rem;
-    cursor: pointer;
+  .search-modal[data-open='1'] .search-modal__dialog {
+    transform: translateY(0) scale(1); /* 打开时位移复原 */
+    will-change: height, transform;
   }
 
-  .search-modal__close:hover {
-    color: oklch(var(--un-preset-theme-colors-primary) / 0.9);
-    background: oklch(var(--un-preset-theme-colors-secondary) / 0.12);
+  .search-modal__dialog:focus-within {
+    box-shadow: 0 0 0 1px var(--search-modal-border-active), 0 10px 40px rgba(0, 0, 0, 0.45);
   }
 
+  /* 当内容超出外框高度限制时，允许滚动 */
   .search-modal__content {
-    min-height: 10rem;
-    max-height: calc(84vh - 4.5rem);
-    overflow: hidden;
-  }
-
-  /* =========================
-     Pagefind：确保不会出现“内部白框”
-     重点：pagefind-ui.css 是运行时加载的，所以这里用更高优先级 + !important
-     ========================= */
-
-  .search-modal .pagefind.pagefind-modal .pagefind-ui {
-    --pagefind-ui-primary: oklch(var(--un-preset-theme-colors-primary));
-    --pagefind-ui-text: oklch(var(--un-preset-theme-colors-secondary));
-    --pagefind-ui-background: transparent;
-
-    /* 关键：不要让 pagefind 默认样式用它画边框 */
-    --pagefind-ui-border: transparent;
-    --pagefind-ui-tag: oklch(var(--un-preset-theme-colors-primary) / 0.12);
-
-    font-family: inherit;
-
-    border: none !important;
-    background: transparent !important;
-    padding: 0 !important;
-    box-shadow: none !important;
-  }
-
-  .search-modal .pagefind.pagefind-modal .pagefind-ui .pagefind-ui__search-input {
-    border-radius: 0.6rem;
-    padding: 0.75rem 1rem 0.75rem 2.6rem;
-    line-height: 1.6;
-    font-size: 1rem;
-
-    background-color: oklch(var(--un-preset-theme-colors-secondary) / 0.04) !important;
-    border: 1px solid oklch(var(--un-preset-theme-colors-secondary) / 0.16) !important;
-    box-shadow: none !important;
-
-    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none" stroke="%23c9c9c9" stroke-width="1.5"><circle cx="9" cy="9" r="5.5" /><path d="M13 13l4 4" /></svg>');
-    background-repeat: no-repeat;
-    background-position: 0.8rem center;
-    background-size: 1rem;
-  }
-
-  .search-modal .pagefind.pagefind-modal .pagefind-ui .pagefind-ui__search-input:focus {
-    outline: none;
-    border-color: oklch(var(--un-preset-theme-colors-primary) / 0.45) !important;
-    box-shadow: 0 0 0 3px oklch(var(--un-preset-theme-colors-primary) / 0.14) !important;
-  }
-
-  .search-modal .pagefind.pagefind-modal .pagefind-ui .pagefind-ui__results {
-    margin-top: 0.9rem;
-    max-height: min(58vh, 34rem);
+    flex: 1;
+    min-height: 0;
     overflow-y: auto;
+    overflow-x: hidden;
     overscroll-behavior: contain;
-    padding: 0 0.2rem 0.2rem 0.2rem;
   }
 
-  /* 关键：去掉结果卡片的白色描边 */
+  .visually-hidden {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+  }
+
+  /* ========================================================
+     3. 输入框：纯透明隐形，高度固定
+     ======================================================== */
+  .search-modal .pagefind.pagefind-modal .pagefind-ui {
+    width: 100%;
+    font-family: inherit;
+    --pagefind-ui-text: var(--search-modal-text);
+    --pagefind-ui-primary: var(--search-modal-text);
+    --pagefind-ui-background: transparent;
+    --pagefind-ui-border: var(--search-modal-border);
+    --pagefind-ui-tag: var(--search-modal-tag-bg);
+  }
+
+  .search-modal .pagefind.pagefind-modal .pagefind-ui .pagefind-ui__form {
+    position: relative;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .search-modal .pagefind.pagefind-modal .pagefind-ui .pagefind-ui__form::before {
+    display: none !important;
+  }
+
+  .search-modal .pagefind.pagefind-modal .pagefind-ui .pagefind-ui__search-input,
+  .search-modal .pagefind-fallback-input {
+    width: 100%;
+    height: 3.8rem; /* 与外层初始高度一致 */
+    padding: 0 3rem;
+    font-size: 1rem;
+    color: var(--search-modal-text) !important;
+    
+    background: transparent !important; 
+    border: none !important; 
+    box-shadow: none !important;
+    outline: none !important;
+
+    background-image: var(--search-modal-search-icon);
+    background-repeat: no-repeat;
+    background-position: 1.2rem center;
+    background-size: 1.1rem;
+  }
+
+  /* ========================================================
+     输入框右侧的清除按钮 (改成完美的叉号)
+     ======================================================== */
+  .search-modal .pagefind.pagefind-modal .pagefind-ui .pagefind-ui__search-clear {
+    position: absolute !important;
+    right: 0.5rem !important; /* 紧贴右侧 */
+    top: 0 !important;
+    height: 3.8rem !important; /* 强制和输入框等高，不仅居中，还能扩大鼠标点击区域 */
+    width: 2.5rem !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background-color: transparent !important;
+    border: none !important;
+    
+    /* 核心魔法：彻底隐藏 Pagefind 默认生成的“清除”或“Clear”文字 */
+    color: transparent !important;
+    font-size: 0 !important; 
+    cursor: pointer;
+    z-index: 10; /* 确保它不会被输入框遮挡 */
+  }
+
+  /* 利用伪元素 (::after) 画一个居中的叉号 */
+  .search-modal .pagefind.pagefind-modal .pagefind-ui .pagefind-ui__search-clear::after {
+    content: '×'; /* 使用标准的乘号字符作为关闭图标 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    font-size: 1.6rem; /* 叉号的视觉大小 */
+    font-weight: 300; /* 让叉号看起来细致秀气一点 */
+    color: var(--search-modal-muted); /* 默认半透明灰色 */
+    transition: color 0.2s ease;
+  }
+
+  /* 鼠标悬停时，叉号变亮，增加交互感 */
+  .search-modal .pagefind.pagefind-modal .pagefind-ui .pagefind-ui__search-clear:hover::after {
+    color: var(--search-modal-text);
+  }
+
+  /* ========================================================
+     4. 结果区域：自然撑开内部容器 (外部会自动追踪动画)
+     ======================================================== */
+  .search-modal .pagefind.pagefind-modal .pagefind-ui .pagefind-ui__drawer:not(:empty) {
+    padding: 0.5rem 0.5rem 1rem 0.5rem;
+    border-top: 1px solid var(--search-modal-border);
+  }
+
+  .search-modal .pagefind.pagefind-modal .pagefind-ui .pagefind-ui__message {
+    padding: 0.5rem 0.5rem 0.5rem 0.8rem;
+    font-size: 0.85rem;
+    color: var(--search-modal-muted);
+  }
+
+  /* ====== 为单个结果项加入由下向上的浮现动画 ====== */
+  @keyframes fadeSlideUp {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
   .search-modal .pagefind.pagefind-modal .pagefind-ui .pagefind-ui__result {
     border: none !important;
     box-shadow: none !important;
     outline: none !important;
-
-    border-radius: 0.7rem;
-    padding: 0.7rem 0.85rem;
-    background: oklch(var(--un-preset-theme-colors-secondary) / 0.05) !important;
-    transition: background-color 180ms ease;
+    border-radius: 0.5rem;
+    padding: 0.8rem 1rem !important;
+    background: transparent !important; 
+    margin-bottom: 0.2rem;
+    
+    transition: background-color 150ms ease;
   }
 
-  .search-modal .pagefind.pagefind-modal .pagefind-ui .pagefind-ui__result + .pagefind-ui__result {
-    margin-top: 0.6rem;
+  /* 仅对前几项做进场动画，平衡“动效质感”和滚动流畅度 */
+  .search-modal .pagefind.pagefind-modal .pagefind-ui .pagefind-ui__result:nth-child(-n+8) {
+    animation: fadeSlideUp 0.24s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
   }
 
   .search-modal .pagefind.pagefind-modal .pagefind-ui .pagefind-ui__result:hover {
-    background: oklch(var(--un-preset-theme-colors-secondary) / 0.10) !important;
+    background: var(--search-modal-hover) !important;
   }
 
   .search-modal .pagefind.pagefind-modal .pagefind-ui .pagefind-ui__result-title {
-    font-weight: 600;
+    font-weight: normal;
+    font-size: 0.95rem;
+    margin-bottom: 0.3rem;
+  }
+  
+  .search-modal .pagefind.pagefind-modal .pagefind-ui .pagefind-ui__result-excerpt {
+    font-size: 0.85rem;
+    color: var(--search-modal-muted);
+    line-height: 1.5;
   }
 
   .search-modal .pagefind.pagefind-modal .pagefind-ui .pagefind-ui__result-link {
     text-decoration: none;
+    color: var(--search-modal-text);
   }
 
-  .search-modal .pagefind.pagefind-modal .pagefind-ui .pagefind-ui__result-link:hover {
-    text-decoration: underline;
+  .search-modal .pagefind.pagefind-modal .pagefind-ui mark {
+    background-color: transparent !important;
+    color: var(--search-modal-mark) !important;
+    font-weight: bold;
   }
 
-  /* fallback */
-  .search-modal .pagefind-fallback {
-    margin-top: 0.6rem;
-    font-size: 0.98rem;
-    color: oklch(var(--un-preset-theme-colors-secondary));
-  }
-
-  .search-modal .pagefind-fallback-ui {
-    display: grid;
+  .search-modal .pagefind.pagefind-modal .pagefind-ui .pagefind-ui__result-tags {
+    margin-top: 0.75rem;
     gap: 0.45rem;
   }
 
-  .search-modal .pagefind-fallback-label {
-    font-weight: 600;
-    font-size: 0.95rem;
-    color: oklch(var(--un-preset-theme-colors-secondary));
+  .search-modal .pagefind.pagefind-modal .pagefind-ui .pagefind-ui__result-tag {
+    display: inline-flex;
+    max-width: min(100%, 24rem);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    border: 1px solid var(--search-modal-border);
+    border-radius: 999px;
+    color: var(--search-modal-tag-text);
+    background: var(--search-modal-tag-bg);
+    font-size: 0.78rem;
+    line-height: 1.15;
+    padding: 0.28rem 0.6rem;
   }
 
-  .search-modal .pagefind-fallback-input {
-    border-radius: 0.7rem;
-    padding: 0.75rem 1rem;
-    line-height: 1.6;
-    font-size: 1rem;
-    border: 1px solid oklch(var(--un-preset-theme-colors-primary) / 0.2);
-    background: oklch(var(--un-preset-theme-colors-background));
-    color: oklch(var(--un-preset-theme-colors-secondary));
-  }
-
-  .search-modal .pagefind-fallback-input:disabled {
-    cursor: not-allowed;
-    opacity: 0.7;
+  /* 滚动条 */
+  .search-modal__content::-webkit-scrollbar { width: 6px; }
+  .search-modal__content::-webkit-scrollbar-track { background: transparent; }
+  .search-modal__content::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
   }
 
   :global(html.search-modal-open),
@@ -391,14 +615,17 @@ const pagefindNotReady = currentUI.searchNotReady ?? 'Search index is not ready.
     overflow: hidden;
   }
 
-  @media (max-width: 768px) {
-    .search-modal__dialog {
-      width: min(92vw, 36rem);
-      max-height: 86vh;
-    }
+  :global(html.reduce-motion) .search-modal__dialog {
+    transition: none;
+  }
 
-    .search-modal .pagefind-ui__results {
-      max-height: min(56vh, 28rem);
+  :global(html.reduce-motion) .search-modal .pagefind.pagefind-modal .pagefind-ui .pagefind-ui__result {
+    animation: none;
+  }
+
+  @media (max-width: 767px) {
+    .search-modal .pagefind.pagefind-modal .pagefind-ui .pagefind-ui__result {
+      animation: none !important;
     }
   }
 </style>

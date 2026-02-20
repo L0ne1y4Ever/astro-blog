@@ -45,7 +45,8 @@
 
 /* Paragraphs */
 .heti :where(p:not(.no-heti):not(.no-heti *)) {
-  --at-apply: 'mb-4 text-pretty cjk:text-justify';
+  --at-apply: 'mb-4 text-pretty cjk:text-justify c-primary/92';
+  font-weight: 430;
 }
 
 /* Links */

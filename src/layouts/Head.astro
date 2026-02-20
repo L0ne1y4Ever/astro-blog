@@ -2,6 +2,7 @@
 import { ClientRouter } from 'astro:transitions'
 import katexCSS from 'katex/dist/katex.min.css?url'
 import { allLocales, base, defaultLocale, themeConfig } from '@/config'
+import { langMap } from '@/i18n/config'
 import { ui } from '@/i18n/ui'
 import { getPageInfo } from '@/utils/page'
 
@@ -24,6 +25,7 @@ const { katex: katexEnabled, reduceMotion } = themeConfig.global
 const { verification = {}, twitterID = '', googleAnalyticsID = '', umamiAnalyticsID = '', apiflashKey = '' } = themeConfig.seo ?? {}
 const { google = '', bing = '', yandex = '', baidu = '' } = verification
 const { customGoogleAnalyticsJS = '', customUmamiAnalyticsJS = '' } = themeConfig.preload ?? {}
+const getHrefLang = (locale: string) => (langMap as Record<string, readonly string[]>)[locale]?.[0] ?? locale
 
 // Site Metadata
 const metaTheme = defaultMode === 'dark' ? darkMode : lightMode
@@ -67,11 +69,11 @@ const pageImage = postSlug
 <link rel="sitemap" href={`${base}/sitemap-index.xml`} />
 <link rel="alternate" href={`${base}/rss.xml`} type="application/rss+xml" title="RSS Feed" />
 <link rel="alternate" href={`${base}/atom.xml`} type="application/atom+xml" title="Atom Feed" />
-{allLocales.map(lang => (
+{allLocales.map(locale => (
   <link
     rel="alternate"
-    href={`${Astro.url.origin}${base}${lang === defaultLocale ? '' : `/${lang}/`}`}
-    hreflang="zh-CN"
+    href={`${Astro.url.origin}${base}${locale === defaultLocale ? '' : `/${locale}/`}`}
+    hreflang={getHrefLang(locale)}
   />
 ))}
 
@@ -201,5 +203,6 @@ const pageImage = postSlug
   />
 )}
 <!-- 霞鹜文楷 -->
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-screen-webfont@1.1.0/style.css" />
 </head>

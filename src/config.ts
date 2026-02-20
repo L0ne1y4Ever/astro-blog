@@ -29,11 +29,11 @@ export const themeConfig: ThemeConfig = {
   // COLOR SETTINGS >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> START
   color: {
     // default theme mode
-    mode: 'light', // light | dark | auto
+    mode: 'dark', // light | dark | auto
     light: {
-      primary:   'oklch(28% 0.006 298)',
-      secondary: 'oklch(46% 0.006 298)',
-      background:'oklch(94% 0.006 298)',
+      primary: 'oklch(28% 0.006 298)',
+      secondary: 'oklch(40% 0.006 298)',
+      background: 'oklch(94% 0.006 298)',
       highlight: 'oklch(0.93 0.16 103 / 0.30)',
     },
 

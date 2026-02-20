@@ -79,6 +79,8 @@ const slug = post.data.abbrlink || post.id
 const description = getPostDescription(post, 'meta')
 const { Content, headings, remarkPluginFrontmatter } = await render(post)
 const updatedDate = getPostUpdatedAt(post)
+const searchTags = post.data.tags.join(' ')
+const searchCategories = post.data.categories.join(' ')
 ---
 
 <Layout
@@ -88,11 +90,30 @@ const updatedDate = getPostUpdatedAt(post)
   supportedLangs={supportedLangs}
 >
   <article class="heti">
+    <div class="post-search-signals" aria-hidden="true">
+      {searchTags && (
+        <p
+          data-pagefind-meta={`tags:${searchTags}`}
+          data-pagefind-weight="6"
+        >
+          {searchTags}
+        </p>
+      )}
+      {searchCategories && (
+        <p
+          data-pagefind-meta={`categories:${searchCategories}`}
+          data-pagefind-weight="4"
+        >
+          {searchCategories}
+        </p>
+      )}
+    </div>
+
     <div class="relative">
       <!-- Go Back Button On Desktop -->
       <BackButton />
       <!-- Title -->
-      <h1 class="post-title" data-pagefind-meta="title">
+      <h1 class="post-title" data-pagefind-meta="title" data-pagefind-weight="8">
         <span
           transition:name={`post-${slug}${currentLang ? `-${currentLang}` : ''}`}
           data-disable-theme-toggle-transition
@@ -143,3 +164,17 @@ const updatedDate = getPostUpdatedAt(post)
     </div>
   </article>
 </Layout>
+
+<style>
+  .post-search-signals {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+</style>

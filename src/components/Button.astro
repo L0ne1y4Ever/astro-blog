@@ -27,8 +27,11 @@ const nextUrl = supportedLangs.length > 0
 
 <div
   class:list={[
-  'absolute right-7.25vw top-14.6 flex gap-6 min-[823px]:max-lg:right-[calc(50vw-22rem)]',
-  'lg:(fixed bottom-[min(10.27rem+1.92vw,12rem)] right-[max(5rem,calc(50vw-35rem))] top-auto w-14rem)',
+  // 1. 把原来的 top-6 改为了 bottom-24 (距离底部 6rem/96px)
+  'fixed bottom-24 right-[min(7.25vw,3.731rem)] z-30 flex items-center gap-5 min-[823px]:max-lg:right-[calc(50vw-22rem)]',
+  
+  // 2. 把 lg:() 里面的 top-[...] 改为了 bottom-[...]，并调整了默认高度保证在信息之上
+  'lg:(right-[max(5rem,calc(50vw-22rem))] bottom-[max(13rem,12vh)] w-auto)',
 ]}
 >
   <!-- Language Switcher -->

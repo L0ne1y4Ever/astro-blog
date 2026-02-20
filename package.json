@@ -7,7 +7,7 @@
   "scripts": {
     "stats": "node src/tools/gen-stats.mjs",
     "dev": "pnpm stats && astro check && astro dev",
-    "build": "pnpm stats && astro check && astro build && pnpm apply-lqip && pagefind --site dist",
+    "build": "pnpm stats && astro check && astro build && pnpm apply-lqip && pagefind --site dist --force-language zh --quiet",
     "preview": "astro preview",
     "astro": "astro",
     "lint": "eslint .",
