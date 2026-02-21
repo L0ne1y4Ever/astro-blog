@@ -29,7 +29,7 @@ lang: zh
 
  :::note[你可以在这些地方找到我：]
  - GitHub：L0ne1y4Ever
-- 邮箱：renchuwuhai233@gmail.com
+- 邮箱：me@theslowmo.com
 :::
 
 > 博客内容默认允许转载引用，但请注明出处链接。

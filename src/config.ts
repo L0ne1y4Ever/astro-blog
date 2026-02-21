@@ -120,10 +120,10 @@ export const themeConfig: ThemeConfig = {
     verification: {
       // google search console
       // https://search.google.com/search-console
-      google: '',
+      google: 'qK2dzQUGh2ax2PQx-MHZ4HkIgcSWGuZN5fQUql-b6aE',
       // bing webmaster tools
       // https://www.bing.com/webmasters
-      bing: '',
+      bing: 'A3A9DFD18DFCBF6D583B080E13D9D3D9',
       // yandex webmaster
       // https://webmaster.yandex.com
       yandex: '',
@@ -166,7 +166,7 @@ export const themeConfig: ThemeConfig = {
       },
       {
         name: 'Email',
-        url: 'mailto:renchuwuhai233@gmail.com',
+        url: 'mailto:me@theslowmo.com',
       },
       // {
       //   name: 'X',
