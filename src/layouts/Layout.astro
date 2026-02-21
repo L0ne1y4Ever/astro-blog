@@ -47,7 +47,7 @@ const MarginBottom = isPost && themeConfig.comment.enabled
   <body data-pagefind-ignore={isPost ? undefined : 'all'}>
     <div
       class="group mx-auto max-w-205.848 min-h-vh w-full min-h-dvh"
-      p="x-[min(7.25vw,3.731rem)] y-10"
+      p="x-[min(6vw,1.35rem)] y-7"
       lg="mx-[max(5.75rem,calc(50vw-34.25rem))] my-20 max-w-[min(calc(75vw-16rem),44rem)] min-h-full p-0"
       >
       <Header />
@@ -72,6 +72,8 @@ const MarginBottom = isPost && themeConfig.comment.enabled
             alt="Side Banner"
             class="w-full object-cover"
             loading="lazy"
+            decoding="async"
+            fetchpriority="low"
           />
         </div>
       </div>

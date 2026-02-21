@@ -202,7 +202,8 @@ const pagefindNotReady = currentUI.searchNotReady ?? '搜索索引未准备好�
         const innerContainer = modal.querySelector('#pagefind-modal')
         if (!dialog || !innerContainer) return
 
-        const maxH = window.innerHeight * 0.8
+        const maxHeightRatio = window.matchMedia('(max-width: 767px)').matches ? 0.9 : 0.8
+        const maxH = window.innerHeight * maxHeightRatio
         const targetH = Math.min(innerContainer.scrollHeight + 2, maxH)
         if (Math.abs(targetH - state.lastDialogHeight) < 1) return
 
@@ -328,6 +329,7 @@ const pagefindNotReady = currentUI.searchNotReady ?? '搜索索引未准备好�
      1. 全局遮罩与位置
      ======================================================== */
   .search-modal {
+    --search-modal-v-pad: clamp(0.75rem, 8vh, 15vh);
     --search-modal-bg: oklch(var(--un-preset-theme-colors-background) / 0.94);
     --search-modal-text: oklch(var(--un-preset-theme-colors-primary) / 0.96);
     --search-modal-muted: oklch(var(--un-preset-theme-colors-secondary) / 0.82);
@@ -344,7 +346,7 @@ const pagefindNotReady = currentUI.searchNotReady ?? '搜索索引未准备好�
     display: flex;
     justify-content: center;
     align-items: flex-start;
-    padding-top: 15vh;
+    padding: var(--search-modal-v-pad) 0.625rem calc(0.875rem + env(safe-area-inset-bottom));
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.3s ease;
@@ -383,7 +385,8 @@ const pagefindNotReady = currentUI.searchNotReady ?? '搜索索引未准备好�
      ======================================================== */
   .search-modal__dialog {
     position: relative;
-    width: min(48rem, 92vw);
+    width: min(48rem, 100%);
+    max-height: calc(100dvh - var(--search-modal-v-pad) - 1.25rem);
     background: var(--search-modal-bg);
     border: 1px solid var(--search-modal-border);
     border-radius: 0.8rem;
@@ -422,6 +425,7 @@ const pagefindNotReady = currentUI.searchNotReady ?? '搜索索引未准备好�
     overflow-y: auto;
     overflow-x: hidden;
     overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
   }
 
   .visually-hidden {
@@ -606,7 +610,7 @@ const pagefindNotReady = currentUI.searchNotReady ?? '搜索索引未准备好�
   .search-modal__content::-webkit-scrollbar { width: 6px; }
   .search-modal__content::-webkit-scrollbar-track { background: transparent; }
   .search-modal__content::-webkit-scrollbar-thumb {
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: oklch(var(--un-preset-theme-colors-secondary) / 0.35);
     border-radius: 10px;
   }
 
@@ -624,6 +628,27 @@ const pagefindNotReady = currentUI.searchNotReady ?? '搜索索引未准备好�
   }
 
   @media (max-width: 767px) {
+    .search-modal {
+      --search-modal-v-pad: max(0.5rem, env(safe-area-inset-top));
+      padding-inline: 0.45rem;
+    }
+
+    .search-modal__dialog {
+      border-radius: 0.7rem;
+      max-height: calc(100dvh - var(--search-modal-v-pad) - env(safe-area-inset-bottom) - 0.5rem);
+    }
+
+    .search-modal .pagefind.pagefind-modal .pagefind-ui .pagefind-ui__search-input,
+    .search-modal .pagefind-fallback-input {
+      height: 3.4rem;
+      padding: 0 2.75rem;
+      background-position: 1rem center;
+    }
+
+    .search-modal .pagefind.pagefind-modal .pagefind-ui .pagefind-ui__search-clear {
+      height: 3.4rem !important;
+    }
+
     .search-modal .pagefind.pagefind-modal .pagefind-ui .pagefind-ui__result {
       animation: none !important;
     }

@@ -4,16 +4,18 @@ published: 2026-02-15
 description: 关于 SlowMoBlogs：写什么、为什么写、以及我是谁。
 lang: zh
 ---
-<div style="display: flex; align-items: center; gap: 2rem; margin-bottom: 2rem; flex-wrap: wrap;">
+<div style="display: flex; align-items: center; gap: clamp(1rem, 3.2vw, 2rem); margin-bottom: 2rem; flex-wrap: wrap;">
   <img 
     src="https://img.theslowmo.com/2026/02/1bd502712b2b2954cd9cad725fa078fd.webp" 
     alt="SlowMo 头像" 
-    style="width: 150px; height: 150px; border-radius: 1rem; object-fit: cover; flex-shrink: 0; border: 3px solid rgba(255,255,255,0.1);" 
+    loading="lazy"
+    decoding="async"
+    style="width: clamp(96px, 28vw, 150px); height: clamp(96px, 28vw, 150px); border-radius: 1rem; object-fit: cover; flex-shrink: 0; border: 2px solid oklch(var(--un-preset-theme-colors-secondary) / 0.2);" 
   />
   
-  <div style="flex: 1; min-width: 260px;">
+  <div style="flex: 1 1 260px; min-width: min(100%, 260px);">
     <h3 style="margin-top: 0; margin-bottom: 0.5rem;">你好，这里是开场白。</h3>
-    <p style="margin: 0; line-height: 1.7; color: rgba(255,255,255,0.8);">
+    <p style="margin: 0; line-height: 1.7; color: oklch(var(--un-preset-theme-colors-primary) / 0.86); text-wrap: pretty;">
       我是 <strong>人畜无害-SlowMo</strong>，一名软件工程专业的学生。<br/>
       欢迎来到我的<Strong>数字自留地</Strong>，这里是我的独立博客 <strong>SlowMo's 办事处</strong>。<br/>
       致力于在网络世界留下足迹。<br/>

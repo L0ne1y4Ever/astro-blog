@@ -9,7 +9,7 @@ export const themeConfig: ThemeConfig = {
     subtitle: `我们的头脑比天空更辽阔。
     Our minds are wider than the sky.`,
     // site description
-    description: 'SlowMoBlogs is a static blog theme based on the Astro framework. Inspired by the concept of slow motion, SlowMoBlogs encourages readers to slow down and savor every word, every image, and every detail. By establishing a new visual standard and reimagining the layout of all pages, SlowMoBlogs creates a reading experience reminiscent of paper books, reviving the beauty of typography. Details in every sight, elegance in every space.',
+    description: 'Attempting to reconstruct the world in "slow motion" in this accelerated digital age. A personal office dedicated to Computer Science, typographic aesthetics, and deep thinking—seeking elegant solutions in the world of bits.',
     // use i18n title/subtitle/description from src/i18n/ui.ts instead of static ones above
     i18nTitle: false, // true | false
     // author name
