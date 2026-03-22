@@ -39,6 +39,10 @@ const ignoredKeys = new Set([
 
 const clickSelector = clickTargets.join(',')
 const typingSelector = typingTargets.join(',')
+type NavigatorConnection = {
+  saveData?: boolean
+  effectiveType?: string
+}
 
 function isMobileDevice(): boolean {
   return window.matchMedia('(max-width: 1023px)').matches
@@ -58,12 +62,13 @@ class SoundEffectManager {
   }
 
   private initPromise: Promise<void> | null = null
+  private shouldPreload = false
 
-  // Preload all sound files during browser idle time
   constructor() {
-    if (!isMobileDevice() && 'requestIdleCallback' in window) {
-      requestIdleCallback(() => this.initialize())
-    }
+    const connection = (navigator as Navigator & { connection?: NavigatorConnection }).connection
+    const saveDataEnabled = Boolean(connection?.saveData)
+    const slowConnection = typeof connection?.effectiveType === 'string' && /(^|-)2g$/.test(connection.effectiveType)
+    this.shouldPreload = !isMobileDevice() && !saveDataEnabled && !slowConnection
   }
 
   // Fetch, decode and cache a single sound file
@@ -94,7 +99,9 @@ class SoundEffectManager {
     return this.initPromise ??= (async () => {
       const AudioContextClass = window.AudioContext || window.webkitAudioContext
       this.audioContext = new AudioContextClass()
-      await this.preloadAllSounds()
+      if (this.shouldPreload) {
+        await this.preloadAllSounds()
+      }
     })()
   }
 
@@ -112,8 +119,13 @@ class SoundEffectManager {
         await this.audioContext.resume()
       }
 
+      let buffers = this.audioBuffers[soundType]
+      if (buffers.length === 0) {
+        await this.preloadAllSounds()
+        buffers = this.audioBuffers[soundType]
+      }
+
       // Get matching sound buffers for the requested type
-      const buffers = this.audioBuffers[soundType]
       if (buffers.length === 0) {
         return
       }

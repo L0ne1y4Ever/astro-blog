@@ -105,7 +105,7 @@ const categoryFilters = [
       const items = Array.from(root.querySelectorAll('.post-item'))
       const sections = Array.from(root.querySelectorAll('.post-year-section'))
 
-      const applyFilter = (filter) => {
+      const updateButtons = (filter) => {
         buttons.forEach((button) => {
           const isActive = button.dataset.filter === filter
           button.classList.toggle('is-active', isActive)
@@ -114,6 +114,10 @@ const categoryFilters = [
             triggerLabel.textContent = button.textContent?.trim() || '全部分类'
           }
         })
+      }
+
+      const applyFilter = (filter) => {
+        updateButtons(filter)
 
         items.forEach((item) => {
           const categories = (item.dataset.categories || '').split(',').filter(Boolean)
@@ -128,14 +132,24 @@ const categoryFilters = [
         })
       }
 
-      buttons.forEach((button) => {
-        button.addEventListener('click', () => {
+      root.__applyPostFilter = applyFilter
+
+      if (root.dataset.filterBound !== '1') {
+        root.dataset.filterBound = '1'
+        root.addEventListener('click', (event) => {
+          const target = event.target
+          if (!(target instanceof Element)) return
+
+          const button = target.closest('.post-filter-option[data-filter]')
+          if (!button || !root.contains(button)) return
+
           applyFilter(button.dataset.filter || 'all')
           if (dropdown) dropdown.removeAttribute('open')
         })
-      })
+      }
 
-      applyFilter('all')
+      const activeButton = root.querySelector('.post-filter-option.is-active[data-filter]')
+      applyFilter(activeButton?.dataset.filter || 'all')
     }
 
     document.addEventListener('astro:page-load', initPostFilters)

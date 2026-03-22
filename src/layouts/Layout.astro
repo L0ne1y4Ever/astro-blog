@@ -13,7 +13,6 @@ import SoundEffect from '@/components/Widgets/SoundEffect.astro'
 import { themeConfig } from '@/config'
 import Head from '@/layouts/Head.astro'
 import { getPageInfo } from '@/utils/page'
-import '@/styles/comment.css'
 import '@/styles/extension.css'
 import '@/styles/font.css'
 import '@/styles/global.css'
@@ -26,9 +25,16 @@ interface Props {
   postDescription?: string
   postSlug?: string
   supportedLangs?: Language[]
+  enableContentEnhancements?: boolean
 }
 
-const { postTitle, postDescription, postSlug, supportedLangs = [] } = Astro.props
+const {
+  postTitle,
+  postDescription,
+  postSlug,
+  supportedLangs = [],
+  enableContentEnhancements = false,
+} = Astro.props
 const { isPost, isSearch } = getPageInfo(Astro.url.pathname)
 const fontStyle = themeConfig.global.fontStyle === 'serif' ? 'font-serif' : 'font-sans'
 const MarginBottom = isPost && themeConfig.comment.enabled
@@ -87,10 +93,10 @@ const MarginBottom = isPost && themeConfig.comment.enabled
     </div>
     <Button supportedLangs={supportedLangs} />
     <SoundEffect />
-    <CodeCopyButton />
-    <GithubCard />
-    <MediaEmbed />
-    <ImageZoom />
+    {enableContentEnhancements && <CodeCopyButton />}
+    {enableContentEnhancements && <GithubCard />}
+    {enableContentEnhancements && <MediaEmbed />}
+    {enableContentEnhancements && <ImageZoom />}
     <SearchModal autoOpen={isSearch} />
   </body>
 </html>

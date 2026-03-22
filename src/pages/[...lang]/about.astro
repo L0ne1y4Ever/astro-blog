@@ -18,7 +18,7 @@ const aboutEntry = allAboutEntries.find(entry => entry.data.lang === currentLang
 const { Content } = aboutEntry ? await render(aboutEntry) : { Content: null }
 ---
 
-<Layout>
+<Layout enableContentEnhancements>
   <!-- Decorative Line -->
   <div class="uno-decorative-line" />
   <!-- About Page Content -->

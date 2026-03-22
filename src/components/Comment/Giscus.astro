@@ -47,6 +47,8 @@ const giscusConfig = {
 <!-- Giscus Script >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> -->
 <script>
 let giscusContainer: HTMLElement | null = null
+let giscusObserver: IntersectionObserver | null = null
+let giscusLoaded = false
 
 function getThemeUrl() {
   const isDark = document.documentElement.classList.contains('dark')
@@ -78,7 +80,7 @@ function updateGiscusTheme() {
 
 function setupGiscus() {
   giscusContainer = document.getElementById('giscus')
-  if (!giscusContainer || !giscusContainer.dataset.config) {
+  if (!giscusContainer || !giscusContainer.dataset.config || giscusLoaded) {
     return
   }
 
@@ -100,20 +102,47 @@ function setupGiscus() {
     Object.assign(script.dataset, dataAttributes)
     script.src = 'https://giscus.app/client.js'
     giscusContainer.appendChild(script)
+    giscusLoaded = true
   }
   catch (error) {
     console.error('[Giscus] Failed to initialize:', error)
   }
 }
 
+function lazySetupGiscus() {
+  giscusContainer = document.getElementById('giscus')
+  if (!giscusContainer || !giscusContainer.dataset.config) {
+    return
+  }
+
+  if (typeof IntersectionObserver === 'undefined') {
+    setupGiscus()
+    return
+  }
+
+  giscusObserver?.disconnect()
+  giscusObserver = new IntersectionObserver((entries) => {
+    if (entries.some(entry => entry.isIntersecting)) {
+      setupGiscus()
+      giscusObserver?.disconnect()
+      giscusObserver = null
+    }
+  }, { rootMargin: '320px 0px' })
+
+  giscusObserver.observe(giscusContainer)
+}
+
 function cleanupGiscus() {
+  giscusObserver?.disconnect()
+  giscusObserver = null
+  giscusLoaded = false
   if (giscusContainer) {
     giscusContainer.innerHTML = ''
     giscusContainer = null
   }
 }
 
-document.addEventListener('astro:page-load', setupGiscus)
+document.addEventListener('astro:page-load', lazySetupGiscus)
 document.addEventListener('astro:before-swap', cleanupGiscus)
 document.addEventListener('theme-changed', updateGiscusTheme)
 </script>

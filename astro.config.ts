@@ -31,8 +31,8 @@ export default defineConfig({
   base,
   trailingSlash: 'always', // Not recommended to change
   prefetch: {
-    prefetchAll: true,
-    defaultStrategy: 'viewport', // hover, tap, viewport, load
+    prefetchAll: false,
+    defaultStrategy: 'hover', // hover, tap, viewport, load
   },
   ...imageConfig,
   i18n: {

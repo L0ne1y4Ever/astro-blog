@@ -23,6 +23,7 @@ const twikooConfig = {
   path: twikooPath,
   lang: twikooLocaleMap[lang],
   twikooCSS,
+  twikooJS,
 }
 ---
 
@@ -35,19 +36,43 @@ const twikooConfig = {
   <div id="twikoo" />
 </div>
 
-<!-- Twikoo Script >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> -->
-<script
-  is:inline
-  src={twikooJS}
-></script>
-
 <script>
 declare const twikoo: any
 
 let twikooObserver: IntersectionObserver | null = null
 let twikooWrapper: HTMLElement | null = null
+let twikooScriptPromise: Promise<void> | null = null
 
-function setupTwikoo() {
+function loadTwikooScript(scriptURL: string) {
+  if (typeof twikoo !== 'undefined') {
+    return Promise.resolve()
+  }
+
+  if (twikooScriptPromise) {
+    return twikooScriptPromise
+  }
+
+  twikooScriptPromise = new Promise((resolve, reject) => {
+    const existing = document.querySelector<HTMLScriptElement>('script[data-twikoo-script="1"]')
+    if (existing) {
+      existing.addEventListener('load', () => resolve(), { once: true })
+      existing.addEventListener('error', () => reject(new Error('Failed to load Twikoo script')), { once: true })
+      return
+    }
+
+    const script = document.createElement('script')
+    script.src = scriptURL
+    script.async = true
+    script.dataset.twikooScript = '1'
+    script.addEventListener('load', () => resolve(), { once: true })
+    script.addEventListener('error', () => reject(new Error('Failed to load Twikoo script')), { once: true })
+    document.head.appendChild(script)
+  })
+
+  return twikooScriptPromise
+}
+
+async function setupTwikoo() {
   const twikooWrapper = document.getElementById('twikoo-wrapper')
   if (!twikooWrapper || !twikooWrapper.dataset.config) {
     return
@@ -55,7 +80,9 @@ function setupTwikoo() {
 
   try {
     const config = JSON.parse(twikooWrapper.dataset.config)
-    const { envId, path, lang } = config
+    const { envId, path, lang, twikooJS } = config
+
+    await loadTwikooScript(twikooJS)
 
     twikoo.init({
       envId,
@@ -90,11 +117,11 @@ function lazySetupTwikoo() {
 
   twikooObserver = new IntersectionObserver((entries) => {
     if (entries.some(entry => entry.isIntersecting)) {
-      setupTwikoo()
+      void setupTwikoo()
       twikooObserver?.disconnect()
       twikooObserver = null
     }
-  }, { rootMargin: '500px' })
+  }, { rootMargin: '640px 0px' })
 
   twikooObserver.observe(twikooWrapper)
 }

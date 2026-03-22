@@ -8,6 +8,8 @@ interface GithubRepoData {
 }
 
 const compactNumberFormat = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 })
+const loadedCards = new WeakSet<HTMLElement>()
+let githubCardObserver: IntersectionObserver | null = null
 
 // Fetch repository data from GitHub API with caching
 async function fetchRepoData(repo: string): Promise<GithubRepoData | null> {
@@ -85,6 +87,11 @@ function updateCardUI(card: HTMLElement, data: GithubRepoData | null) {
 
 // Load data for a specific card element
 async function loadRepoData(card: HTMLElement) {
+  if (loadedCards.has(card)) {
+    return
+  }
+
+  loadedCards.add(card)
   const repo = card.dataset.repo
   if (!repo) {
     return
@@ -101,10 +108,35 @@ function setupGithubCards() {
     return
   }
 
+  githubCardObserver?.disconnect()
+
+  if (typeof IntersectionObserver === 'undefined') {
+    cards.forEach((card) => {
+      loadRepoData(card)
+    })
+    return
+  }
+
+  githubCardObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) {
+        return
+      }
+
+      const card = entry.target as HTMLElement
+      void loadRepoData(card)
+      githubCardObserver?.unobserve(card)
+    })
+  }, { rootMargin: '240px 0px' })
+
   cards.forEach((card) => {
-    loadRepoData(card)
+    githubCardObserver?.observe(card)
   })
 }
 
 document.addEventListener('astro:page-load', setupGithubCards)
+document.addEventListener('astro:before-swap', () => {
+  githubCardObserver?.disconnect()
+  githubCardObserver = null
+})
 </script>
