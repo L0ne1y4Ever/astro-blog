@@ -10,14 +10,15 @@ import TOC from '@/components/Widgets/TOC.astro'
 import { allLocales } from '@/config'
 import { getLangFromLocale, getLangRouteParam } from '@/i18n/lang'
 import Layout from '@/layouts/Layout.astro'
-import { checkPostSlugDuplication, getPostUpdatedAt } from '@/utils/content'
+import { checkPostSlugDuplication, getPostUpdatedAt, shouldIncludePost } from '@/utils/content'
 import { getPostDescription } from '@/utils/description'
 
 export async function getStaticPaths() {
   const posts: CollectionEntry<'posts'>[] = await getCollection('posts')
+  const visiblePosts = posts.filter(post => shouldIncludePost(post.data, import.meta.env.DEV))
 
   // Check if there are duplicate post slugs
-  const duplicates = await checkPostSlugDuplication(posts)
+  const duplicates = await checkPostSlugDuplication(visiblePosts)
   if (duplicates.length > 0) {
     throw new Error(`Duplicate post slugs:\n${duplicates.join('\n')}`)
   }
@@ -27,7 +28,7 @@ export async function getStaticPaths() {
   // Handles both specific language posts (e.g., 'en') and universal posts (lang: '')
   const slugToLangsMap = new Map<string, Set<Language>>()
 
-  for (const post of posts) {
+  for (const post of visiblePosts) {
     const slug = post.data.abbrlink || post.id
     const lang = post.data.lang
 
@@ -53,9 +54,7 @@ export async function getStaticPaths() {
   }
   // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-  return allLocales.flatMap(lang => posts
-    // Show drafts in dev mode only
-    .filter(post => import.meta.env.DEV || !post.data.draft)
+  return allLocales.flatMap(lang => visiblePosts
     // Match current language or universal posts
     .filter(post => post.data.lang === lang || post.data.lang === '')
     .map((post) => {

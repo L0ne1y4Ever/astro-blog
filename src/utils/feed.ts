@@ -10,6 +10,7 @@ import sanitizeHtml from 'sanitize-html'
 import { base, defaultLocale, themeConfig } from '@/config'
 import { ui } from '@/i18n/ui'
 import { memoize } from '@/utils/cache'
+import { shouldIncludePost } from '@/utils/content'
 import { getPostDescription } from '@/utils/description'
 
 const markdownParser = new MarkdownIt()
@@ -135,16 +136,16 @@ export async function generateFeed({ lang }: { lang?: Language } = {}) {
     },
   })
 
-  // Filter posts by language and exclude drafts
+  // Filter posts by language and exclude hidden posts in production
   const posts = await getCollection(
     'posts',
     ({ data }: { data: CollectionEntry<'posts'>['data'] }) => {
-      const isNotDraft = !data.draft
+      const isIncluded = shouldIncludePost(data, import.meta.env.DEV)
       const isCorrectLang = data.lang === lang
         || data.lang === ''
         || (lang === undefined && data.lang === defaultLocale)
 
-      return isNotDraft && isCorrectLang
+      return isIncluded && isCorrectLang
     },
   )
 

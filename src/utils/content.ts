@@ -10,6 +10,17 @@ import { memoize } from '@/utils/cache'
 const metaCache = new Map<string, { minutes: number }>()
 const postsRoot = path.resolve(process.cwd(), 'src/content/posts')
 
+export function isPostPublic(data: CollectionEntry<'posts'>['data']) {
+  return data.visibility !== 'private' && !data.draft
+}
+
+export function shouldIncludePost(
+  data: CollectionEntry<'posts'>['data'],
+  includeHidden = false,
+) {
+  return includeHidden || isPostPublic(data)
+}
+
 function resolvePostFilePath(id: string) {
   const normalized = id.replace(/\\/g, '/')
   const basePath = path.resolve(postsRoot, normalized)
@@ -106,7 +117,7 @@ export async function checkPostSlugDuplication(posts: CollectionEntry<'posts'>[]
 }
 
 /**
- * Get all posts (including pinned ones, excluding drafts in production)
+ * Get all posts (including pinned ones, excluding hidden posts in production)
  *
  * @param lang The language code to filter by, defaults to site's default language
  * @returns Posts filtered by language, enhanced with metadata, sorted by date
@@ -117,8 +128,7 @@ async function _getPosts(lang?: Language) {
   const filteredPosts = await getCollection(
     'posts',
     ({ data }: CollectionEntry<'posts'>) => {
-      // Show drafts in dev mode only
-      const shouldInclude = import.meta.env.DEV || !data.draft
+      const shouldInclude = shouldIncludePost(data, import.meta.env.DEV)
       return shouldInclude && (data.lang === currentLang || data.lang === '')
     },
   )
@@ -267,7 +277,7 @@ export const getPostsByTag = memoize(_getPostsByTag)
 async function _getTagSupportedLangs(tag: string): Promise<Language[]> {
   const posts = await getCollection(
     'posts',
-    ({ data }) => !data.draft,
+    ({ data }) => shouldIncludePost(data, import.meta.env.DEV),
   )
   const { allLocales } = await import('@/config')
 

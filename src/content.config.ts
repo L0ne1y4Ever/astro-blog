@@ -17,6 +17,7 @@ const posts = defineCollection({
     tags: z.array(z.string()).optional().default([]),
     categories: z.array(z.string()).optional().default([]),
     // Advanced
+    visibility: z.enum(['public', 'private']).optional().default('public'),
     draft: z.boolean().optional().default(false),
     pin: z.number().int().min(0).max(99).optional().default(0),
     toc: z.boolean().optional().default(themeConfig.global.toc),

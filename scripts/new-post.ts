@@ -33,6 +33,7 @@ description: ''
 updated: ''
 tags:
   - Tag
+visibility: public
 draft: false
 pin: 0
 toc: ${themeConfig.global.toc}

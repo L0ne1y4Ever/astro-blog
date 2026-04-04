@@ -1,10 +1,11 @@
 import type { CollectionEntry } from 'astro:content'
 import { OGImageRoute } from 'astro-og-canvas'
 import { getCollection } from 'astro:content'
+import { shouldIncludePost } from '@/utils/content'
 import { getPostDescription } from '@/utils/description'
 
 // eslint-disable-next-line antfu/no-top-level-await
-const posts = await getCollection('posts')
+const posts = await getCollection('posts', ({ data }) => shouldIncludePost(data, import.meta.env.DEV))
 
 // Create slug-to-metadata lookup object for blog posts
 const pages = Object.fromEntries(
