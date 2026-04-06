@@ -16,6 +16,20 @@ const posts = defineCollection({
     ),
     tags: z.array(z.string()).optional().default([]),
     categories: z.array(z.string()).optional().default([]),
+    // Structured content helpers for future expansion
+    series: z.preprocess(
+      val => val === '' || val == null ? undefined : val,
+      z.string().optional(),
+    ).default(''),
+    featured: z.boolean().optional().default(false),
+    cover: z.preprocess(
+      val => val === '' || val == null ? undefined : val,
+      z.string().optional(),
+    ).default(''),
+    status: z.preprocess(
+      val => val === '' || val == null ? undefined : val,
+      z.enum(['idea', 'ongoing', 'paused', 'completed']).optional(),
+    ),
     // Advanced
     visibility: z.enum(['public', 'private']).optional().default('public'),
     draft: z.boolean().optional().default(false),

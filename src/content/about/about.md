@@ -25,9 +25,10 @@ lang: zh
 
 这个博客 **SlowMo's 办事处** 用来记录：
 
-- 学习记录（前端 / 后端 / Rust / 数据库）
+- 学习记录（AI / 前端 / 后端 / Rust / 数据库）
 - 各种语言学习历程
 - 一些生活随笔
+- VibeCoding 
 
  :::note[你可以在这些地方找到我：]
  - GitHub：L0ne1y4Ever

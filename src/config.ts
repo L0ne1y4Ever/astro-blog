@@ -23,6 +23,8 @@ export const themeConfig: ThemeConfig = {
     // recommended formats: svg, png or ico
     favicon: '/icons/izumi.png', // or https://example.com/favF.svg
     startDate: '2026-02-14',
+    // used by the archive page age watermark
+    birthYear: 2007,
   },
   // SITE INFORMATION >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> END
 

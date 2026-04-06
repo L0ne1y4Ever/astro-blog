@@ -18,6 +18,7 @@ export interface ThemeConfig {
     base: string
     favicon: string
     startDate: string
+    birthYear?: number
   }
   color: {
     mode: 'light' | 'dark' | 'auto'

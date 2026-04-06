@@ -2,7 +2,9 @@
 import type { Language } from '@/i18n/config'
 import LanguageSwitcherIcon from '@/assets/icons/language-switcher.svg'
 import ThemeToggleIcon from '@/assets/icons/theme-toggle.svg'
+import TopIcon from '@/assets/icons/top-icon.svg'
 import { moreLocales, themeConfig } from '@/config'
+import { isPostPage } from '@/utils/page'
 import { getNextGlobalLangPath, getNextSupportedLangPath } from '@/i18n/path'
 
 interface Props {
@@ -16,6 +18,7 @@ const {
 
 const { supportedLangs } = Astro.props
 const currentPath = Astro.url.pathname
+const isPost = isPostPage(currentPath)
 
 // Check if there are other languages to switch
 const showLanguageSwitcher = moreLocales.length > 0
@@ -23,15 +26,22 @@ const showLanguageSwitcher = moreLocales.length > 0
 const nextUrl = supportedLangs.length > 0
   ? getNextSupportedLangPath(currentPath, supportedLangs) // Use supported languages when available
   : getNextGlobalLangPath(currentPath) // Fallback to all languages when no supported languages data
+
+const { enabled: commentsEnabled, giscus, twikoo, waline } = themeConfig.comment
+const hasCommentProvider = Boolean(
+  giscus?.repo?.trim()
+  || twikoo?.envId?.trim()
+  || waline?.serverURL?.trim(),
+)
+const showCommentShortcut = isPost && commentsEnabled && hasCommentProvider
+const showPostShortcuts = isPost
 ---
 
 <div
   class:list={[
-  // 1. 把原来的 top-6 改为了 bottom-24 (距离底部 6rem/96px)
-  'fixed bottom-24 right-[min(7.25vw,3.731rem)] z-30 flex items-center gap-5 min-[823px]:max-lg:right-[calc(50vw-22rem)]',
+  'fixed bottom-24 right-[min(7.25vw,3.731rem)] z-30 flex items-center gap-4 min-[823px]:max-lg:right-[calc(50vw-22rem)]',
   
-  // 2. 把 lg:() 里面的 top-[...] 改为了 bottom-[...]，并调整了默认高度保证在信息之上
-  'lg:(right-[max(5rem,calc(50vw-22rem))] bottom-[max(13rem,12vh)] w-auto)',
+  'lg:(right-[max(5rem,calc(50vw-35rem))] bottom-[max(13rem,12vh)] w-14rem justify-start)',
 ]}
 >
   <!-- Language Switcher -->
@@ -39,11 +49,12 @@ const nextUrl = supportedLangs.length > 0
     <a
       id="language-switcher"
       href={nextUrl}
-      class="aspect-square w-4 c-secondary active:scale-90 hover:c-primary"
+      class="floating-utility-button c-secondary"
       aria-label="Switch website language"
     >
       <LanguageSwitcherIcon
         aria-hidden="true"
+        class="floating-utility-button__icon"
         fill="currentColor"
       />
     </a>
@@ -52,16 +63,45 @@ const nextUrl = supportedLangs.length > 0
   <!-- Theme Toggle -->
   <button
     id="theme-toggle-button"
-    class="aspect-square w-4 c-secondary active:scale-90 hover:c-primary"
+    class="floating-utility-button c-secondary"
     data-light-mode={lightMode}
     data-dark-mode={darkMode}
     aria-label="Switch light/dark theme"
-  >
-    <ThemeToggleIcon
-      aria-hidden="true"
-      fill="currentColor"
-    />
-  </button>
+    >
+      <ThemeToggleIcon
+        aria-hidden="true"
+        class="floating-utility-button__icon"
+        fill="currentColor"
+      />
+    </button>
+
+  {showPostShortcuts && (
+    <button
+      id="post-top-button"
+      class="floating-utility-button c-secondary"
+      type="button"
+      aria-label="Back to top"
+    >
+      <TopIcon
+        aria-hidden="true"
+        class="floating-utility-button__icon floating-utility-button__icon--top"
+        fill="currentColor"
+      />
+    </button>
+  )}
+
+  {showCommentShortcut && (
+    <button
+      id="post-comment-button"
+      class="floating-utility-button c-secondary"
+      type="button"
+      aria-label="Jump to comments"
+    >
+      <svg class="floating-utility-button__icon floating-utility-button__icon--comment" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5.5 6.5h13a2.5 2.5 0 0 1 2.5 2.5v6a2.5 2.5 0 0 1-2.5 2.5H11l-4.5 3v-3H5.5A2.5 2.5 0 0 1 3 15V9a2.5 2.5 0 0 1 2.5-2.5Z" />
+      </svg>
+    </button>
+  )}
 </div>
 
 <!-- Theme Toggle Script >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> -->
@@ -120,6 +160,34 @@ function handleThemeToggle(e: MouseEvent) {
   })
 }
 
+function scrollToTarget(selector: string) {
+  const target = document.querySelector<HTMLElement>(selector)
+  if (!target) {
+    return
+  }
+
+  const behavior = document.documentElement.classList.contains('reduce-motion')
+    ? 'auto'
+    : 'smooth'
+
+  target.scrollIntoView({ behavior, block: 'start' })
+}
+
+function handlePostShortcutClick(e: MouseEvent) {
+  if (!(e.target instanceof Element)) {
+    return
+  }
+
+  if (e.target.closest('#post-top-button')) {
+    scrollToTarget('#post-top-anchor')
+    return
+  }
+
+  if (e.target.closest('#post-comment-button')) {
+    scrollToTarget('#post-comments')
+  }
+}
+
 // Listen to system theme changes in real time
 function handleSystemChange(event: MediaQueryListEvent) {
   const isDark = event.matches
@@ -127,5 +195,46 @@ function handleSystemChange(event: MediaQueryListEvent) {
 }
 
 document.addEventListener('click', handleThemeToggle)
+document.addEventListener('click', handlePostShortcutClick)
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', handleSystemChange)
 </script>
+
+<style>
+  .floating-utility-button {
+    width: 1rem;
+    height: 1rem;
+    display: inline-grid;
+    place-items: center;
+    flex: none;
+    padding: 0;
+    margin: 0;
+    border: none;
+    background: none;
+    line-height: 1;
+    transition: color 160ms ease, transform 120ms ease;
+  }
+
+  .floating-utility-button:hover {
+    color: oklch(var(--un-preset-theme-colors-primary));
+  }
+
+  .floating-utility-button:active {
+    transform: scale(0.9);
+  }
+
+  .floating-utility-button__icon {
+    width: 1rem;
+    height: 1rem;
+    display: block;
+  }
+
+  .floating-utility-button__icon--top {
+    transform: translateY(-0.01rem);
+  }
+
+  .floating-utility-button__icon--comment {
+    width: 1.16rem;
+    height: 1.16rem;
+    transform: translateY(-0.01rem);
+  }
+</style>

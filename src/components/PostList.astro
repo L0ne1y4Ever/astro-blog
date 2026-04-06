@@ -3,6 +3,7 @@ import type { Language } from '@/i18n/config'
 import type { Post } from '@/types'
 import PinIcon from '@/assets/icons/pin-icon.svg'
 import PostDate from '@/components/PostDate.astro'
+import StatusBadge from '@/components/StatusBadge.astro'
 import { getPostPath } from '@/i18n/path'
 import { getPostDescription } from '@/utils/description'
 import { isHomePage } from '@/utils/page'
@@ -31,9 +32,11 @@ const isHome = isHomePage(Astro.url.pathname)
         ]}
         data-tags={tags.join(',')}
         data-categories={categories.join(',')}
+        data-created={post.data.published.valueOf()}
+        data-updated={(post.data.updated ?? post.data.published).valueOf()}
       >
         {/* post title */}
-        <h3 class="inline transition-colors hover:c-primary">
+        <h3 class="inline-flex flex-wrap items-center gap-x-2 gap-y-1 transition-colors hover:c-primary">
           <a
             class:list={[
               'cjk:tracking-wide',
@@ -45,6 +48,12 @@ const isHome = isHomePage(Astro.url.pathname)
           >
             {post.data.title}
           </a>
+          {post.data.status && (
+            <StatusBadge
+              status={post.data.status}
+              compact
+            />
+          )}
           {/* pinned icon */}
           {pinned && (
             <PinIcon

@@ -19,6 +19,7 @@ interface Translation {
   searchNotReady: string
   linksEmpty: string
   toc: string
+  series: string
 }
 
 export const ui: Record<Language, Translation> = {
@@ -41,5 +42,6 @@ export const ui: Record<Language, Translation> = {
     searchNotReady: '搜索索引尚未生成，请先执行构建命令。',
     linksEmpty: '暂无友链',
     toc: '目录',
+    series: '系列文章',
   },
 }

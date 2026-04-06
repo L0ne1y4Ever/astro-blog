@@ -1,9 +1,10 @@
 ---
 import PostList from '@/components/PostList.astro'
 import { allLocales } from '@/config'
+import { postCategoryFilters } from '@/data/post-categories'
 import { getLangFromLocale, getLangRouteParam } from '@/i18n/lang'
 import Layout from '@/layouts/Layout.astro'
-import { getPinnedPosts, getPostsByYear } from '@/utils/content'
+import { getFeaturedPosts, getPinnedPosts, getPostsByYear } from '@/utils/content'
 
 export async function getStaticPaths() {
   return allLocales.map(lang => ({
@@ -13,65 +14,82 @@ export async function getStaticPaths() {
 
 const currentLang = getLangFromLocale(Astro.currentLocale)
 const pinnedPosts = await getPinnedPosts(currentLang)
+const featuredPosts = await getFeaturedPosts(currentLang)
 const postsByYear = await getPostsByYear(currentLang)
-const categoryFilters = [
-  {
-    label: '杂谈',
-    value: '杂谈',
-    icon: '<svg viewBox="0 0 20 20" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" d="M4 5.5h12a2 2 0 0 1 2 2v6.5a2 2 0 0 1-2 2H8l-4 3v-3H4a2 2 0 0 1-2-2V7.5a2 2 0 0 1 2-2Z"/></svg>',
-  },
-  {
-    label: '代码日常',
-    value: '代码日常',
-    icon: '<svg viewBox="0 0 20 20" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" d="m7.5 6-4 4 4 4M12.5 6l4 4-4 4M9 15.5l2-11"/></svg>',
-  },
-  {
-    label: '碎碎念',
-    value: '碎碎念',
-    icon: '<svg viewBox="0 0 20 20" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" d="M3.5 6.5h13M3.5 10h13M3.5 13.5h9"/></svg>',
-  },
-  {
-    label: '生活随笔',
-    value: '生活随笔',
-    icon: '<svg viewBox="0 0 20 20" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" d="M10 3.5c3.5 2.2 4.5 6.2 2.8 9.1C11 15.5 7.5 16.5 5.5 14c2.7 0 4.8-1.2 5.7-3.1 1-2.2.3-4.8-1.2-6.3Z"/></svg>',
-  },
-  {
-    label: '项目复盘',
-    value: '项目复盘',
-    icon: '<svg viewBox="0 0 20 20" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" d="M6 3.5h8l2 2V16a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 4 16V5a1.5 1.5 0 0 1 2-1.5Z"/><path fill="none" stroke="currentColor" stroke-width="1.5" d="M7.5 8.5h5M7.5 12h5"/></svg>',
-  },
-]
+const featuredIds = new Set(featuredPosts.map(post => post.id))
+const visiblePostsByYear = new Map(
+  [...postsByYear.entries()]
+    .map(([year, posts]) => [year, posts.filter(post => !featuredIds.has(post.id))] as const)
+    .filter(([, posts]) => posts.length > 0),
+)
 ---
 
 <Layout>
   <div data-posts-root>
     <section class="post-filter font-navbar">
       <div class="post-filter-list">
-        <details class="post-filter-dropdown" data-filter-dropdown>
-          <summary class="post-filter-trigger" role="button" aria-label="全部分类">
+        <div class="post-filter-dropdown" data-filter-dropdown data-open="0">
+          <button
+            id="post-filter-trigger"
+            class="post-filter-trigger"
+            type="button"
+            aria-label="全部分类"
+            aria-controls="post-filter-menu"
+            aria-expanded="false"
+            aria-haspopup="listbox"
+            data-dropdown-trigger
+          >
             <span class="post-filter-icon" aria-hidden="true">
               <svg viewBox="0 0 20 20"><path fill="none" stroke="currentColor" stroke-width="1.5" d="M4.5 5.5h11a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H7.5l-3.5 3v-3h-0.5a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2Z"/></svg>
             </span>
-            <span class="post-filter-label">全部分类</span>
+            <span class="post-filter-label" data-dropdown-label>全部分类</span>
             <span class="post-filter-caret" aria-hidden="true">
               <svg viewBox="0 0 20 20"><path fill="none" stroke="currentColor" stroke-width="1.5" d="m5.5 8 4.5 4.5L14.5 8"/></svg>
             </span>
-          </summary>
-          <div class="post-filter-menu" role="listbox" aria-label="分类列表">
-            <button class="post-filter-option is-active" type="button" data-filter="all" role="option" aria-selected="true">
+          </button>
+          <div
+            id="post-filter-menu"
+            class="post-filter-menu"
+            role="listbox"
+            aria-label="分类列表"
+            aria-hidden="true"
+            data-dropdown-menu
+          >
+            <button
+              class="post-filter-option is-active"
+              type="button"
+              data-filter="all"
+              data-trigger-label="全部分类"
+              role="option"
+              aria-selected="true"
+            >
               <span class="post-filter-icon" aria-hidden="true">
                 <svg viewBox="0 0 20 20"><path fill="none" stroke="currentColor" stroke-width="1.5" d="M4.5 5.5h11a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H7.5l-3.5 3v-3h-0.5a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2Z"/></svg>
               </span>
-              全部分类
+              显示全部
             </button>
-            {categoryFilters.map(category => (
-              <button class="post-filter-option" type="button" data-filter={category.value} role="option" aria-selected="false">
+            {postCategoryFilters.map(category => (
+              <button
+                class="post-filter-option"
+                type="button"
+                data-filter={category.value}
+                data-filter-values={(category.matches ?? [category.value]).join(',')}
+                role="option"
+                aria-selected="false"
+              >
                 <span class="post-filter-icon" aria-hidden="true" set:html={category.icon} />
                 {category.label}
               </button>
             ))}
           </div>
-        </details>
+        </div>
+
+        <button class="post-filter-plain" type="button" data-sort-button aria-label="切换排序字段">
+          <span class="post-filter-icon" aria-hidden="true">
+            <svg viewBox="0 0 20 20"><path fill="none" stroke="currentColor" stroke-width="1.5" d="M5 4.5v2M15 4.5v2M4 8.5h12M5.5 11h3M11.5 11h3M5.5 14h3" /></svg>
+          </span>
+          <span class="post-sort-label">创建日期</span>
+        </button>
       </div>
     </section>
 
@@ -83,8 +101,16 @@ const categoryFilters = [
       </section>
     )}
 
+    {featuredPosts.length > 0 && (
+      <section class="post-year-section post-year-section--featured mb-7.5">
+        <div class="uno-decorative-line" />
+        <div class="post-section-label font-navbar">精选</div>
+        <PostList posts={featuredPosts} lang={currentLang} />
+      </section>
+    )}
+
     <!-- Regular Posts -->
-    {[...postsByYear.entries()].map(([year, posts]) => (
+    {[...visiblePostsByYear.entries()].map(([year, posts]) => (
       <section class="post-year-section mb-7.5" data-year={year}>
         <div class="uno-decorative-line" />
         <PostList posts={posts} lang={currentLang} />
@@ -93,78 +119,214 @@ const categoryFilters = [
   </div>
 </Layout>
 
-<script is:inline data-astro-rerun>
-  (function () {
-    function initPostFilters() {
-      const root = document.querySelector('[data-posts-root]')
-      if (!root) return
+<script>
+  import { animateTextSwap, createDropdownController, runFlipTransition } from '@/scripts/filter-interactions'
 
-      const dropdown = root.querySelector('[data-filter-dropdown]')
-      const triggerLabel = root.querySelector('.post-filter-trigger .post-filter-label')
-      const buttons = Array.from(root.querySelectorAll('.post-filter-option[data-filter]'))
-      const items = Array.from(root.querySelectorAll('.post-item'))
-      const sections = Array.from(root.querySelectorAll('.post-year-section'))
+  type PostSortKey = 'created' | 'updated'
+  type PostFilterRoot = HTMLElement & {
+    __postFilterCleanup?: () => void
+  }
 
-      const updateButtons = (filter) => {
-        buttons.forEach((button) => {
-          const isActive = button.dataset.filter === filter
-          button.classList.toggle('is-active', isActive)
-          button.setAttribute('aria-selected', isActive ? 'true' : 'false')
-          if (isActive && triggerLabel) {
-            triggerLabel.textContent = button.textContent?.trim() || '全部分类'
-          }
-        })
-      }
+  function initPostFilters() {
+    const root = document.querySelector<PostFilterRoot>('[data-posts-root]')
+    if (!root || root.dataset.filterBound === '1') return
 
-      const applyFilter = (filter) => {
-        updateButtons(filter)
+    const triggerLabel = root.querySelector<HTMLElement>('[data-dropdown-label]')
+    const sortLabel = root.querySelector<HTMLElement>('.post-sort-label')
+    const buttons = Array.from(root.querySelectorAll<HTMLElement>('.post-filter-option[data-filter]'))
+    const items = Array.from(root.querySelectorAll<HTMLElement>('.post-item'))
+    const sections = Array.from(root.querySelectorAll<HTMLElement>('.post-year-section'))
+    const sortableSections = sections.filter(section =>
+      !section.classList.contains('post-year-section--pinned')
+      && !section.classList.contains('post-year-section--featured'),
+    )
+    const dropdown = createDropdownController(root.querySelector<HTMLElement>('[data-filter-dropdown]'))
+    const originalSectionOrder = sortableSections.slice()
+    const originalItemsMap = new Map<HTMLElement, HTMLElement[]>()
+    let currentSortKey: PostSortKey = 'created'
 
-        items.forEach((item) => {
-          const categories = (item.dataset.categories || '').split(',').filter(Boolean)
-          const match = filter === 'all' || categories.includes(filter)
-          item.classList.toggle('is-hidden', !match)
-          item.setAttribute('aria-hidden', match ? 'false' : 'true')
-        })
+    sortableSections.forEach((section) => {
+      originalItemsMap.set(section, Array.from(section.querySelectorAll<HTMLElement>('.post-item')))
+    })
 
-        sections.forEach((section) => {
-          const visibleItems = section.querySelectorAll('.post-item:not(.is-hidden)')
-          section.classList.toggle('is-hidden', visibleItems.length === 0)
-        })
-      }
-
-      root.__applyPostFilter = applyFilter
-
-      if (root.dataset.filterBound !== '1') {
-        root.dataset.filterBound = '1'
-        root.addEventListener('click', (event) => {
-          const target = event.target
-          if (!(target instanceof Element)) return
-
-          const button = target.closest('.post-filter-option[data-filter]')
-          if (!button || !root.contains(button)) return
-
-          applyFilter(button.dataset.filter || 'all')
-          if (dropdown) dropdown.removeAttribute('open')
-        })
-      }
-
-      const activeButton = root.querySelector('.post-filter-option.is-active[data-filter]')
-      applyFilter(activeButton?.dataset.filter || 'all')
+    const getKeyTime = (item: HTMLElement, key: PostSortKey) => {
+      const value = key === 'updated' ? item.dataset.updated : item.dataset.created
+      const time = Number(value)
+      return Number.isFinite(time) ? time : 0
     }
 
-    document.addEventListener('astro:page-load', initPostFilters)
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initPostFilters)
+    const updateButtons = (filter: string) => {
+      buttons.forEach((button) => {
+        const isActive = button.dataset.filter === filter
+        button.classList.toggle('is-active', isActive)
+        button.setAttribute('aria-selected', isActive ? 'true' : 'false')
+
+        if (!isActive || !triggerLabel) {
+          return
+        }
+
+        const nextLabel = button.dataset.triggerLabel || button.textContent?.trim() || '全部分类'
+        if (triggerLabel.textContent !== nextLabel) {
+          triggerLabel.textContent = nextLabel
+          animateTextSwap(triggerLabel)
+        }
+      })
     }
-    else {
-      initPostFilters()
+
+    const syncSortLabel = () => {
+      if (!sortLabel) {
+        return
+      }
+
+      const nextLabel = currentSortKey === 'updated' ? '更新日期' : '创建日期'
+      if (sortLabel.textContent !== nextLabel) {
+        sortLabel.textContent = nextLabel
+        animateTextSwap(sortLabel)
+      }
     }
-  })()
+
+    const reorderBySortKey = () => {
+      const sectionOrderIndex = new Map(originalSectionOrder.map((section, index) => [section, index]))
+      const sectionEntries = sortableSections.map((section) => {
+        const list = section.querySelector<HTMLElement>('ul')
+        const itemsInSection = originalItemsMap.get(section) ?? []
+        const orderedItems = itemsInSection
+          .slice()
+          .sort((a, b) => getKeyTime(b, currentSortKey) - getKeyTime(a, currentSortKey))
+
+        orderedItems.forEach(item => list?.appendChild(item))
+
+        const visibleItems = orderedItems.filter(item => !item.classList.contains('is-hidden'))
+        const maxTime = visibleItems.length > 0
+          ? Math.max(...visibleItems.map(item => getKeyTime(item, currentSortKey)))
+          : -1
+
+        return {
+          section,
+          maxTime,
+          index: sectionOrderIndex.get(section) ?? 0,
+        }
+      })
+
+      sectionEntries
+        .sort((a, b) => (b.maxTime - a.maxTime) || (a.index - b.index))
+        .forEach(entry => root.appendChild(entry.section))
+    }
+
+    const updatePostState = (filter: string) => {
+      updateButtons(filter)
+      syncSortLabel()
+
+      items.forEach((item) => {
+        const categories = (item.dataset.categories || '').split(',').filter(Boolean)
+        const match = filter === 'all' || categories.some(category => activeFilterValues.includes(category))
+        item.classList.toggle('is-hidden', !match)
+        item.setAttribute('aria-hidden', match ? 'false' : 'true')
+      })
+
+      sections.forEach((section) => {
+        const visibleItems = section.querySelectorAll('.post-item:not(.is-hidden)')
+        section.classList.toggle('is-hidden', visibleItems.length === 0)
+      })
+
+      reorderBySortKey()
+    }
+
+    let activeFilterValues: string[] = []
+
+    const applyFilter = (filter: string, filterValues: string[] = [], animate: boolean = true) => {
+      const sync = () => updatePostState(filter)
+
+      activeFilterValues = filterValues
+
+      if (animate) {
+        runFlipTransition(root, ['.post-item', '.post-year-section'], sync)
+      }
+      else {
+        sync()
+      }
+
+      dropdown.close()
+    }
+
+    const applySort = (key: PostSortKey, animate: boolean = true) => {
+      const sync = () => {
+        currentSortKey = key
+        syncSortLabel()
+        reorderBySortKey()
+      }
+
+      if (animate) {
+        runFlipTransition(root, ['.post-item', '.post-year-section'], sync)
+      }
+      else {
+        sync()
+      }
+
+      dropdown.close()
+    }
+
+    const handleClick = (event: Event) => {
+      const target = event.target
+      if (!(target instanceof Element)) return
+
+      const button = target.closest<HTMLElement>('.post-filter-option[data-filter]')
+      if (button && root.contains(button)) {
+        const filterValues = (button.dataset.filterValues || '')
+          .split(',')
+          .map(value => value.trim())
+          .filter(Boolean)
+        applyFilter(button.dataset.filter || 'all', filterValues)
+        return
+      }
+
+      if (target.closest('[data-sort-button]')) {
+        const nextSortKey: PostSortKey = currentSortKey === 'created' ? 'updated' : 'created'
+        applySort(nextSortKey)
+      }
+    }
+
+    root.addEventListener('click', handleClick)
+    root.dataset.filterBound = '1'
+    root.__postFilterCleanup = () => {
+      root.removeEventListener('click', handleClick)
+      dropdown.destroy()
+      delete root.dataset.filterBound
+      delete root.__postFilterCleanup
+    }
+
+    const activeButton = root.querySelector<HTMLElement>('.post-filter-option.is-active[data-filter]')
+    const initialFilterValues = (activeButton?.dataset.filterValues || '')
+      .split(',')
+      .map(value => value.trim())
+      .filter(Boolean)
+    applyFilter(activeButton?.dataset.filter || 'all', initialFilterValues, false)
+  }
+
+  function cleanupPostFilters() {
+    document.querySelectorAll<PostFilterRoot>('[data-posts-root]').forEach(root => root.__postFilterCleanup?.())
+  }
+
+  document.addEventListener('astro:page-load', initPostFilters)
+  document.addEventListener('astro:before-swap', cleanupPostFilters)
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initPostFilters, { once: true })
+  }
+  else {
+    initPostFilters()
+  }
 </script>
 
 <style>
   :root {
     --post-control-h: 1.85rem; /* 想更紧凑可改 1.75rem */
+    --post-menu-open-duration: 180ms;
+    --post-menu-close-duration: 140ms;
+    --post-layout-duration: 240ms;
+    --post-motion-easing: cubic-bezier(0.22, 1, 0.36, 1);
+    --post-filter-col-w: 7.5rem;
+    --post-sort-col-w: 6.25rem;
   }
 
   /* ===== 顶部筛选条 ===== */
@@ -172,15 +334,24 @@ const categoryFilters = [
     display: flex;
     align-items: center;
     margin-bottom: 2rem;
+    position: relative;
+    z-index: 30;
   }
 
   .post-filter-list {
-    display: flex;
+    display: grid;
     align-items: center;
-    flex-wrap: wrap;
+    grid-template-columns: var(--post-filter-col-w) var(--post-sort-col-w);
     gap: 0.45rem;
     font-size: 0.9rem;
     color: oklch(var(--un-preset-theme-colors-secondary) / 0.75);
+  }
+
+  .post-section-label {
+    margin-bottom: 0.8rem;
+    font-size: 0.9rem;
+    color: oklch(var(--un-preset-theme-colors-secondary) / 0.78);
+    letter-spacing: 0.03em;
   }
 
   /* ===== details/summary 控件：与归档页一致 ===== */
@@ -189,11 +360,15 @@ const categoryFilters = [
     display: inline-flex;
     align-items: stretch;
     height: var(--post-control-h);
+    inline-size: var(--post-filter-col-w);
+    isolation: isolate;
   }
 
-  .post-filter-trigger {
+  .post-filter-trigger,
+  .post-filter-plain {
     box-sizing: border-box;
     height: 100%;
+    inline-size: 100%;
     display: inline-flex;
     align-items: center;
     gap: 0.3rem;
@@ -216,14 +391,22 @@ const categoryFilters = [
     transition: color 180ms ease, background-color 180ms ease, border-color 180ms ease;
   }
 
-  .post-filter-trigger::-webkit-details-marker {
-    display: none;
+  .post-filter-plain {
+    height: var(--post-control-h);
+    inline-size: var(--post-sort-col-w);
   }
 
+  .post-filter-plain:hover,
+  .post-filter-dropdown[data-open='1'] .post-filter-trigger,
   .post-filter-trigger:hover {
     color: oklch(var(--un-preset-theme-colors-primary) / 0.9);
     background-color: oklch(var(--un-preset-theme-colors-secondary) / 0.08);
     border-color: oklch(var(--un-preset-theme-colors-secondary) / 0.18);
+  }
+
+  .post-filter-plain:active,
+  .post-filter-trigger:active {
+    transform: translateY(1px) scale(0.985);
   }
 
   .post-filter-icon {
@@ -241,11 +424,19 @@ const categoryFilters = [
   .post-filter-caret {
     margin-left: 0.15rem;
     opacity: 0.6;
-    transition: transform 180ms ease;
+    flex: none;
+    transition: transform var(--post-menu-close-duration) var(--post-motion-easing);
   }
 
-  .post-filter-dropdown[open] .post-filter-caret {
+  .post-filter-label,
+  .post-sort-label {
+    min-width: 0;
+    white-space: nowrap;
+  }
+
+  .post-filter-dropdown[data-open='1'] .post-filter-caret {
     transform: rotate(180deg);
+    transition-duration: var(--post-menu-open-duration);
   }
 
   /* ===== 下拉菜单：贴近按钮 + 可滚动 ===== */
@@ -255,7 +446,7 @@ const categoryFilters = [
     margin-top: 0.12rem; /* 这里就是“按钮与菜单”的距离 */
     left: 0;
 
-    min-width: 11rem;
+    inline-size: max(100%, 10.75rem);
     max-height: 320px;
     overflow: auto;
 
@@ -267,23 +458,28 @@ const categoryFilters = [
     box-shadow: 0 18px 40px oklch(0 0 0 / 0.35);
     display: grid;
     gap: 0.1rem;
-    z-index: 20;
-  }
-
-  .post-filter-dropdown[open] .post-filter-menu {
-    animation: postMenuIn 160ms ease-out;
+    z-index: 60;
     transform-origin: top left;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(8px) scale(0.985);
+    transition:
+      opacity var(--post-menu-close-duration) var(--post-motion-easing),
+      transform var(--post-menu-close-duration) var(--post-motion-easing),
+      visibility 0s linear var(--post-menu-close-duration);
+    will-change: opacity, transform;
   }
 
-  @keyframes postMenuIn {
-    from {
-      opacity: 0;
-      transform: translateY(-0.35rem) scale(0.98);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-    }
+  .post-filter-dropdown[data-open='1'] .post-filter-menu {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateY(0) scale(1);
+    transition:
+      opacity var(--post-menu-open-duration) var(--post-motion-easing),
+      transform var(--post-menu-open-duration) var(--post-motion-easing),
+      visibility 0s linear 0s;
   }
 
   .post-filter-option {
@@ -302,7 +498,14 @@ const categoryFilters = [
     font-size: 0.88rem;
     line-height: 1.2;
 
-    transition: background-color 180ms ease, color 180ms ease;
+    transition:
+      background-color 180ms ease,
+      color 180ms ease,
+      transform var(--post-menu-close-duration) var(--post-motion-easing);
+  }
+
+  .post-filter-option:active {
+    transform: translateY(1px);
   }
 
   .post-filter-option:hover,
@@ -324,6 +527,7 @@ const categoryFilters = [
 
   /* 键盘可访问性 */
   .post-filter-trigger:focus-visible,
+  .post-filter-plain:focus-visible,
   .post-filter-option:focus-visible {
     outline: 2px solid oklch(var(--un-preset-theme-colors-primary) / 0.45);
     outline-offset: 2px;
@@ -331,7 +535,11 @@ const categoryFilters = [
 
   /* ===== 文章分组隐藏动画（保留你原逻辑） ===== */
   .post-year-section {
-    transition: opacity 220ms ease, transform 220ms ease, max-height 220ms ease;
+    overflow: hidden;
+    transition:
+      opacity var(--post-layout-duration) var(--post-motion-easing),
+      transform var(--post-layout-duration) var(--post-motion-easing),
+      max-height var(--post-layout-duration) var(--post-motion-easing);
     max-height: 999px;
   }
 
@@ -347,7 +555,11 @@ const categoryFilters = [
   :global(.post-item) {
     max-height: 16rem;
     overflow: hidden;
-    transition: opacity 220ms ease, max-height 220ms ease, transform 220ms ease, margin 220ms ease;
+    transition:
+      opacity var(--post-layout-duration) var(--post-motion-easing),
+      max-height var(--post-layout-duration) var(--post-motion-easing),
+      transform var(--post-layout-duration) var(--post-motion-easing),
+      margin var(--post-layout-duration) var(--post-motion-easing);
   }
 
   :global(.post-item.is-hidden) {
@@ -362,22 +574,26 @@ const categoryFilters = [
   /* ===== 手机适配 ===== */
   @media (max-width: 768px) {
     .post-filter-list {
-      gap: 0.45rem;
+      grid-template-columns: var(--post-filter-col-w) var(--post-sort-col-w);
     }
 
     .post-filter-menu {
-      min-width: 10rem;
+      inline-size: max(100%, 10rem);
       max-height: 260px;
     }
   }
 
   @media (prefers-reduced-motion: reduce) {
+    .post-filter-menu,
+    .post-filter-caret,
     .post-year-section,
     :global(.post-item) {
       transition: none;
     }
   }
 
+  :global(html.reduce-motion) .post-filter-menu,
+  :global(html.reduce-motion) .post-filter-caret,
   :global(html.reduce-motion) .post-year-section,
   :global(html.reduce-motion) .post-item {
     transition: none;

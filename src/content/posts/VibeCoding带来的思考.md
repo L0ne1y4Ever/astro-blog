@@ -10,6 +10,9 @@ draft: false
 categories:
   - 代码日常
   - 随笔
+featured: true
+status: idea
+cover: https://img.theslowmo.com/2026/04/a03867970f8cbc0ffd48c2502dfde2c1.webp
 pin: 0
 toc: true
 lang: 'zh'
@@ -43,7 +46,7 @@ VibeCoding 最吸引人的地方，恰恰就在这里。它让“编程”这件
 ## 高强度尝试之后，我反而没那么焦虑了
 
 但真正让我开始重新思考这件事的，不是博客本身，而是前些天我为了复刻一个精美的图片粒子化效果，连续进行了多天高强度的 VibeCoding。
-![](https://img.theslowmo.com/2026/04/a03867970f8cbc0ffd48c2502dfde2c1.webp)
+
 我使用了市面上绝大多数Ai 及其Agent，譬如最主流的Gemini3.1pro, gpt-5.4 xhigh ,Opus4.6 thinking,Grok-4.20。实际体验是，在涉及复杂视觉实现的任务里，仅凭一句话和一张参考图，往往很难稳定生成真正符合预期的结果。哪怕我已经明确给出了技术栈、实现边界、风险点与推进路径，结果依然会在很多细节上偏离目标。
 
 我甚至使用GPT-5.4 pro长时间思考，帮我把 Prompt 压得更精确一点，再把那份 Prompt 丢回去继续生成。但结果还是一样：它们可以很快给出一个“看起来像那么回事”的版本，却很难持续逼近那个真正微妙、真正具体的效果。

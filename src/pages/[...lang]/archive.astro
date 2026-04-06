@@ -1,5 +1,7 @@
 ---
-import { allLocales } from '@/config'
+import { allLocales, themeConfig } from '@/config'
+import StatusBadge from '@/components/StatusBadge.astro'
+import { postCategoryFilters } from '@/data/post-categories'
 import { getLangFromLocale, getLangRouteParam } from '@/i18n/lang'
 import { getPostPath, getTagPath } from '@/i18n/path'
 import Layout from '@/layouts/Layout.astro'
@@ -18,36 +20,7 @@ const allPosts = Array.from(postsByYear.values()).flat()
 const totalPosts = allPosts.length
 const totalWords = allPosts.reduce((sum, post) => sum + countWords(post.body ?? ''), 0)
 
-const currentYear = new Date().getFullYear()
-const currentAge = 19
-
-const categoryFilters = [
-  {
-    label: '杂谈',
-    value: '杂谈',
-    icon: '<svg viewBox="0 0 20 20" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" d="M4 5.5h12a2 2 0 0 1 2 2v6.5a2 2 0 0 1-2 2H8l-4 3v-3H4a2 2 0 0 1-2-2V7.5a2 2 0 0 1 2-2Z"/></svg>',
-  },
-  {
-    label: '代码日常',
-    value: '代码日常',
-    icon: '<svg viewBox="0 0 20 20" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" d="m7.5 6-4 4 4 4M12.5 6l4 4-4 4M9 15.5l2-11"/></svg>',
-  },
-  {
-    label: '碎碎念',
-    value: '碎碎念',
-    icon: '<svg viewBox="0 0 20 20" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" d="M3.5 6.5h13M3.5 10h13M3.5 13.5h9"/></svg>',
-  },
-  {
-    label: '生活随笔',
-    value: '生活随笔',
-    icon: '<svg viewBox="0 0 20 20" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" d="M10 3.5c3.5 2.2 4.5 6.2 2.8 9.1C11 15.5 7.5 16.5 5.5 14c2.7 0 4.8-1.2 5.7-3.1 1-2.2.3-4.8-1.2-6.3Z"/></svg>',
-  },
-  {
-    label: '项目复盘',
-    value: '项目复盘',
-    icon: '<svg viewBox="0 0 20 20" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" d="M6 3.5h8l2 2V16a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 4 16V5a2 2 0 0 1 2-1.5Z"/><path fill="none" stroke="currentColor" stroke-width="1.5" d="M7.5 8.5h5M7.5 12h5"/></svg>',
-  },
-]
+const { birthYear } = themeConfig.site
 
 function formatMonthDay(date: Date) {
   return date.toLocaleDateString('en-US', {
@@ -77,7 +50,12 @@ function formatWordCount(count: number) {
 }
 
 function getAgeForYear(year: number) {
-  return `${currentAge - (currentYear - year)}岁`
+  if (!birthYear) {
+    return ''
+  }
+
+  const age = year - birthYear
+  return age > 0 ? `${age}岁` : ''
 }
 ---
 
@@ -85,33 +63,63 @@ function getAgeForYear(year: number) {
   <div data-archive-root>
     <section class="archive-toolbar font-navbar">
       <div class="archive-toolbar-left">
-        <details class="archive-filter-dropdown" data-filter-dropdown>
-          <summary class="archive-filter-trigger" role="button" aria-label="全部分类">
+        <div class="archive-filter-dropdown" data-filter-dropdown data-open="0">
+          <button
+            id="archive-filter-trigger"
+            class="archive-filter-trigger"
+            type="button"
+            aria-label="全部分类"
+            aria-controls="archive-filter-menu"
+            aria-expanded="false"
+            aria-haspopup="listbox"
+            data-dropdown-trigger
+          >
             <span class="archive-filter-icon" aria-hidden="true">
               <svg viewBox="0 0 20 20"><path fill="none" stroke="currentColor" stroke-width="1.5" d="M4.5 5.5h11a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H7.5l-3.5 3v-3h-0.5a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2Z" /></svg>
             </span>
-            <span class="archive-filter-label">全部分类</span>
+            <span class="archive-filter-label" data-dropdown-label>全部分类</span>
             <span class="archive-filter-caret" aria-hidden="true">
               <svg viewBox="0 0 20 20"><path fill="none" stroke="currentColor" stroke-width="1.5" d="m5.5 8 4.5 4.5L14.5 8" /></svg>
             </span>
-          </summary>
+          </button>
 
-          <div class="archive-filter-menu" role="listbox" aria-label="分类列表">
-            <button class="archive-filter-option is-active" type="button" data-filter="all" role="option" aria-selected="true">
+          <div
+            id="archive-filter-menu"
+            class="archive-filter-menu"
+            role="listbox"
+            aria-label="分类列表"
+            aria-hidden="true"
+            data-dropdown-menu
+          >
+            <button
+              class="archive-filter-option is-active"
+              type="button"
+              data-filter="all"
+              data-trigger-label="全部分类"
+              role="option"
+              aria-selected="true"
+            >
               <span class="archive-filter-icon" aria-hidden="true">
                 <svg viewBox="0 0 20 20"><path fill="none" stroke="currentColor" stroke-width="1.5" d="M4.5 5.5h11a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H7.5l-3.5 3v-3h-0.5a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2Z" /></svg>
               </span>
-              全部分类
+              显示全部
             </button>
 
-            {categoryFilters.map(category => (
-              <button class="archive-filter-option" type="button" data-filter={category.value} role="option" aria-selected="false">
+            {postCategoryFilters.map(category => (
+              <button
+                class="archive-filter-option"
+                type="button"
+                data-filter={category.value}
+                data-filter-values={(category.matches ?? [category.value]).join(',')}
+                role="option"
+                aria-selected="false"
+              >
                 <span class="archive-filter-icon" aria-hidden="true" set:html={category.icon} />
                 {category.label}
               </button>
             ))}
           </div>
-        </details>
+        </div>
 
         <button class="archive-filter-plain" type="button" data-sort-button aria-label="切换排序字段">
           <span class="archive-filter-icon" aria-hidden="true">
@@ -161,9 +169,17 @@ function getAgeForYear(year: number) {
                       {formatMonthDay(post.data.published)}
                     </time>
 
-                    <a class="archive-title" href={getPostPath(slug, currentLang)}>
-                      {post.data.title}
-                    </a>
+                    <div class="archive-title-wrap">
+                      <a class="archive-title" href={getPostPath(slug, currentLang)}>
+                        {post.data.title}
+                      </a>
+                      {post.data.status && (
+                        <StatusBadge
+                          status={post.data.status}
+                          compact
+                        />
+                      )}
+                    </div>
 
                     <div class="archive-tags">
                       {tags.map(tag => (
@@ -183,134 +199,256 @@ function getAgeForYear(year: number) {
   </div>
 </Layout>
 
-<script is:inline data-astro-rerun>
-(function () {
-  function initArchiveInteractions() {
-    const root = document.querySelector('[data-archive-root]')
-    if (!root) return
+<script>
+import { animateTextSwap, createDropdownController, runFlipTransition } from '@/scripts/filter-interactions'
 
-    const filterDropdown = root.querySelector('[data-filter-dropdown]')
-    const sortButton = root.querySelector('[data-sort-button]')
-    const filterLabel = root.querySelector('.archive-filter-label')
-    const sortLabel = root.querySelector('.archive-sort-label')
-    const filterButtons = Array.from(root.querySelectorAll('.archive-filter-option[data-filter]'))
-    const items = Array.from(root.querySelectorAll('.archive-item'))
-    const years = Array.from(root.querySelectorAll('.archive-year'))
-    const yearsContainer = root.querySelector('.archive-years')
+type ArchiveSortKey = 'created' | 'updated'
+type ArchiveRoot = HTMLElement & {
+  __archiveCleanup?: () => void
+}
 
-    const originalYearOrder = years.slice()
-    const originalItemsMap = new Map()
-    let currentSortKey = 'created'
+function initArchiveInteractions() {
+  const root = document.querySelector<ArchiveRoot>('[data-archive-root]')
+  if (!root || root.dataset.archiveBound === '1') return
 
-    years.forEach((year) => {
-      originalItemsMap.set(year, Array.from(year.querySelectorAll('.archive-item')))
-    })
+  const yearsContainer = root.querySelector<HTMLElement>('.archive-years')
+  if (!yearsContainer) return
 
-    const getKeyTime = (item, key) => {
-      const value = key === 'updated' ? item.dataset.updated : item.dataset.created
-      const time = Number(value)
-      return Number.isFinite(time) ? time : 0
-    }
+  const filterLabel = root.querySelector<HTMLElement>('[data-dropdown-label]')
+  const sortLabel = root.querySelector<HTMLElement>('.archive-sort-label')
+  const filterButtons = Array.from(root.querySelectorAll<HTMLElement>('.archive-filter-option[data-filter]'))
+  const items = Array.from(root.querySelectorAll<HTMLElement>('.archive-item'))
+  const years = Array.from(root.querySelectorAll<HTMLElement>('.archive-year'))
+  const dropdown = createDropdownController(root.querySelector<HTMLElement>('[data-filter-dropdown]'))
+  const originalYearOrder = years.slice()
+  const originalItemsMap = new Map<HTMLElement, HTMLElement[]>()
+  let currentSortKey: ArchiveSortKey = 'created'
 
-    const applySort = (key) => {
-      currentSortKey = key
-      if (!yearsContainer) return
+  years.forEach((year) => {
+    originalItemsMap.set(year, Array.from(year.querySelectorAll<HTMLElement>('.archive-item')))
+  })
 
-      if (sortLabel) {
-        sortLabel.textContent = key === 'updated' ? '更新日期' : '创建日期'
+  const getKeyTime = (item: HTMLElement, key: ArchiveSortKey) => {
+    const value = key === 'updated' ? item.dataset.updated : item.dataset.created
+    const time = Number(value)
+    return Number.isFinite(time) ? time : 0
+  }
+
+  const updateFilterButtons = (filter: string) => {
+    filterButtons.forEach((button) => {
+      const isActive = button.dataset.filter === filter
+      button.classList.toggle('is-active', isActive)
+      button.setAttribute('aria-selected', isActive ? 'true' : 'false')
+
+      if (!isActive || !filterLabel) {
+        return
       }
 
-      const yearOrderIndex = new Map(originalYearOrder.map((year, index) => [year, index]))
-      const yearEntries = years.map((year) => {
-        const list = year.querySelector('.archive-list')
-        const itemsInYear = originalItemsMap.get(year) || []
-        const orderedItems = itemsInYear
-          .slice()
-          .sort((a, b) => getKeyTime(b, key) - getKeyTime(a, key))
+      const nextLabel = button.dataset.triggerLabel || button.textContent?.trim() || '全部分类'
+      if (filterLabel.textContent !== nextLabel) {
+        filterLabel.textContent = nextLabel
+        animateTextSwap(filterLabel)
+      }
+    })
+  }
 
-        orderedItems.forEach(item => list.appendChild(item))
-
-        const visibleItems = orderedItems.filter(item => !item.classList.contains('is-hidden'))
-        const maxTime = visibleItems.length > 0
-          ? Math.max(...visibleItems.map(item => getKeyTime(item, key)))
-          : -1
-
-        return { year, maxTime, index: yearOrderIndex.get(year) ?? 0 }
-      })
-
-      yearEntries
-        .sort((a, b) => (b.maxTime - a.maxTime) || (a.index - b.index))
-        .forEach(entry => yearsContainer.appendChild(entry.year))
+  const syncSortLabel = () => {
+    if (!sortLabel) {
+      return
     }
 
-    const applyFilter = (filter) => {
-      filterButtons.forEach((button) => {
-        const isActive = button.dataset.filter === filter
-        button.classList.toggle('is-active', isActive)
-        button.setAttribute('aria-selected', isActive ? 'true' : 'false')
-
-        if (isActive && filterLabel) {
-          filterLabel.textContent = button.textContent?.trim() || '全部分类'
-        }
-      })
-
-      items.forEach((item) => {
-        const categories = (item.dataset.categories || '').split(',').filter(Boolean)
-        const match = filter === 'all' || categories.includes(filter)
-        item.classList.toggle('is-hidden', !match)
-        item.setAttribute('aria-hidden', match ? 'false' : 'true')
-      })
-
-      years.forEach((year) => {
-        year.classList.remove('is-active')
-        const visibleItems = year.querySelectorAll('.archive-item:not(.is-hidden)')
-        year.classList.toggle('is-hidden', visibleItems.length === 0)
-      })
-
-      applySort(currentSortKey)
+    const nextLabel = currentSortKey === 'updated' ? '更新日期' : '创建日期'
+    if (sortLabel.textContent !== nextLabel) {
+      sortLabel.textContent = nextLabel
+      animateTextSwap(sortLabel)
     }
+  }
 
-    filterButtons.forEach((button) => {
-      button.addEventListener('click', () => {
-        applyFilter(button.dataset.filter || 'all')
-        if (filterDropdown) filterDropdown.removeAttribute('open')
-      })
+  const reorderBySortKey = () => {
+    const yearOrderIndex = new Map(originalYearOrder.map((year, index) => [year, index]))
+    const yearEntries = years.map((year) => {
+      const list = year.querySelector<HTMLElement>('.archive-list')
+      const itemsInYear = originalItemsMap.get(year) ?? []
+      const orderedItems = itemsInYear
+        .slice()
+        .sort((a, b) => getKeyTime(b, currentSortKey) - getKeyTime(a, currentSortKey))
+
+      orderedItems.forEach(item => list?.appendChild(item))
+
+      const visibleItems = orderedItems.filter(item => !item.classList.contains('is-hidden'))
+      const maxTime = visibleItems.length > 0
+        ? Math.max(...visibleItems.map(item => getKeyTime(item, currentSortKey)))
+        : -1
+
+      return { year, maxTime, index: yearOrderIndex.get(year) ?? 0 }
     })
 
-    if (sortButton) {
-      sortButton.addEventListener('click', () => {
-        applySort(currentSortKey === 'created' ? 'updated' : 'created')
-      })
-    }
+    yearEntries
+      .sort((a, b) => (b.maxTime - a.maxTime) || (a.index - b.index))
+      .forEach(entry => yearsContainer.appendChild(entry.year))
+  }
+
+  let activeFilterValues: string[] = []
+
+  const updateArchiveState = (filter: string) => {
+    updateFilterButtons(filter)
+    syncSortLabel()
+
+    items.forEach((item) => {
+      const categories = (item.dataset.categories || '').split(',').filter(Boolean)
+      const match = filter === 'all' || categories.some(category => activeFilterValues.includes(category))
+      item.classList.toggle('is-hidden', !match)
+      item.setAttribute('aria-hidden', match ? 'false' : 'true')
+    })
 
     years.forEach((year) => {
-      const yearItems = year.querySelectorAll('.archive-item')
-      yearItems.forEach((item) => {
-        item.addEventListener('mouseenter', () => year.classList.add('is-active'))
-        item.addEventListener('mouseleave', () => year.classList.remove('is-active'))
-        item.addEventListener('focusin', () => year.classList.add('is-active'))
-        item.addEventListener('focusout', (event) => {
-          if (!year.contains(event.relatedTarget)) year.classList.remove('is-active')
-        })
-      })
+      year.classList.remove('is-active')
+      const visibleItems = year.querySelectorAll('.archive-item:not(.is-hidden)')
+      year.classList.toggle('is-hidden', visibleItems.length === 0)
     })
 
-    applyFilter('all')
+    reorderBySortKey()
   }
 
-  document.addEventListener('astro:page-load', initArchiveInteractions)
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initArchiveInteractions)
-  } else {
-    initArchiveInteractions()
+  const applyFilter = (filter: string, filterValues: string[] = [], animate: boolean = true) => {
+    const sync = () => updateArchiveState(filter)
+
+    activeFilterValues = filterValues
+
+    if (animate) {
+      runFlipTransition(root, ['.archive-item', '.archive-year'], sync)
+    }
+    else {
+      sync()
+    }
+
+    dropdown.close()
   }
-})()
+
+  const applySort = (key: ArchiveSortKey, animate: boolean = true) => {
+    const sync = () => {
+      currentSortKey = key
+      syncSortLabel()
+      reorderBySortKey()
+    }
+
+    if (animate) {
+      runFlipTransition(root, ['.archive-item', '.archive-year'], sync)
+    }
+    else {
+      sync()
+    }
+
+    dropdown.close()
+  }
+
+  const interactionController = new AbortController()
+
+  root.addEventListener('click', (event) => {
+    const target = event.target
+    if (!(target instanceof Element)) return
+
+    const filterButton = target.closest<HTMLElement>('.archive-filter-option[data-filter]')
+    if (filterButton && root.contains(filterButton)) {
+      const filterValues = (filterButton.dataset.filterValues || '')
+        .split(',')
+        .map(value => value.trim())
+        .filter(Boolean)
+      applyFilter(filterButton.dataset.filter || 'all', filterValues)
+      return
+    }
+
+    if (target.closest('[data-sort-button]')) {
+      const nextSortKey: ArchiveSortKey = currentSortKey === 'created' ? 'updated' : 'created'
+      applySort(nextSortKey)
+    }
+  }, { signal: interactionController.signal })
+
+  root.addEventListener('pointerover', (event) => {
+    const target = event.target
+    if (!(target instanceof Element)) return
+
+    const item = target.closest<HTMLElement>('.archive-item')
+    if (!item || !root.contains(item)) return
+
+    item.closest<HTMLElement>('.archive-year')?.classList.add('is-active')
+  }, { signal: interactionController.signal })
+
+  root.addEventListener('pointerout', (event) => {
+    const target = event.target
+    if (!(target instanceof Element)) return
+
+    const item = target.closest<HTMLElement>('.archive-item')
+    if (!item || !root.contains(item)) return
+
+    const year = item.closest<HTMLElement>('.archive-year')
+    const relatedTarget = event.relatedTarget
+    const relatedNode = relatedTarget instanceof Node ? relatedTarget : null
+    if (year && (!relatedNode || !year.contains(relatedNode))) {
+      year.classList.remove('is-active')
+    }
+  }, { signal: interactionController.signal })
+
+  root.addEventListener('focusin', (event) => {
+    const target = event.target
+    if (!(target instanceof Element)) return
+
+    target.closest<HTMLElement>('.archive-item')?.closest<HTMLElement>('.archive-year')?.classList.add('is-active')
+  }, { signal: interactionController.signal })
+
+  root.addEventListener('focusout', (event) => {
+    const target = event.target
+    if (!(target instanceof Element)) return
+
+    const year = target.closest<HTMLElement>('.archive-item')?.closest<HTMLElement>('.archive-year')
+    const relatedTarget = event.relatedTarget
+    const relatedNode = relatedTarget instanceof Node ? relatedTarget : null
+    if (year && (!relatedNode || !year.contains(relatedNode))) {
+      year.classList.remove('is-active')
+    }
+  }, { signal: interactionController.signal })
+
+  root.dataset.archiveBound = '1'
+  root.__archiveCleanup = () => {
+    interactionController.abort()
+    dropdown.destroy()
+    delete root.dataset.archiveBound
+    delete root.__archiveCleanup
+  }
+
+  const activeButton = root.querySelector<HTMLElement>('.archive-filter-option.is-active[data-filter]')
+  const initialFilterValues = (activeButton?.dataset.filterValues || '')
+    .split(',')
+    .map(value => value.trim())
+    .filter(Boolean)
+  applyFilter(activeButton?.dataset.filter || 'all', initialFilterValues, false)
+}
+
+function cleanupArchiveInteractions() {
+  document.querySelectorAll<ArchiveRoot>('[data-archive-root]').forEach(root => root.__archiveCleanup?.())
+}
+
+document.addEventListener('astro:page-load', initArchiveInteractions)
+document.addEventListener('astro:before-swap', cleanupArchiveInteractions)
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initArchiveInteractions, { once: true })
+}
+else {
+  initArchiveInteractions()
+}
 </script>
 
 <style>
   :root {
     /* 控件统一高度（更紧凑就改成 1.75rem / 1.85rem） */
     --archive-control-h: 1.85rem;
+    --archive-menu-open-duration: 180ms;
+    --archive-menu-close-duration: 140ms;
+    --archive-layout-duration: 240ms;
+    --archive-motion-easing: cubic-bezier(0.22, 1, 0.36, 1);
+    --archive-filter-col-w: 7.5rem;
+    --archive-sort-col-w: 6.25rem;
   }
 
   /* ===== 顶部工具栏 ===== */
@@ -320,12 +458,14 @@ function getAgeForYear(year: number) {
     justify-content: space-between;
     gap: 1.2rem;
     margin-bottom: 2.5rem;
+    position: relative;
+    z-index: 30;
   }
 
   .archive-toolbar-left {
-    display: flex;
+    display: grid;
     align-items: center;
-    flex-wrap: nowrap;
+    grid-template-columns: var(--archive-filter-col-w) var(--archive-sort-col-w);
     gap: 0.45rem;
     font-size: 0.9rem;
     color: oklch(var(--un-preset-theme-colors-secondary) / 0.75);
@@ -350,12 +490,15 @@ function getAgeForYear(year: number) {
     display: inline-flex;
     align-items: stretch;
     height: var(--archive-control-h);
+    inline-size: var(--archive-filter-col-w);
+    isolation: isolate;
   }
 
   .archive-filter-trigger,
   .archive-filter-plain {
     box-sizing: border-box;
     height: var(--archive-control-h);
+    inline-size: 100%;
     display: inline-flex;
     align-items: center;
     gap: 0.3rem;
@@ -376,18 +519,23 @@ function getAgeForYear(year: number) {
 
   .archive-filter-trigger {
     height: 100%;
-    list-style: none;
   }
 
-  .archive-filter-trigger::-webkit-details-marker {
-    display: none;
+  .archive-filter-plain {
+    inline-size: var(--archive-sort-col-w);
   }
 
   .archive-filter-plain:hover,
+  .archive-filter-dropdown[data-open='1'] .archive-filter-trigger,
   .archive-filter-trigger:hover {
     color: oklch(var(--un-preset-theme-colors-primary) / 0.9);
     background-color: oklch(var(--un-preset-theme-colors-secondary) / 0.08);
     border-color: oklch(var(--un-preset-theme-colors-secondary) / 0.18);
+  }
+
+  .archive-filter-plain:active,
+  .archive-filter-trigger:active {
+    transform: translateY(1px) scale(0.985);
   }
 
   .archive-filter-icon {
@@ -405,11 +553,19 @@ function getAgeForYear(year: number) {
   .archive-filter-caret {
     margin-left: 0.15rem;
     opacity: 0.6;
-    transition: transform 180ms ease;
+    flex: none;
+    transition: transform var(--archive-menu-close-duration) var(--archive-motion-easing);
   }
 
-  .archive-filter-dropdown[open] .archive-filter-caret {
+  .archive-filter-label,
+  .archive-sort-label {
+    min-width: 0;
+    white-space: nowrap;
+  }
+
+  .archive-filter-dropdown[data-open='1'] .archive-filter-caret {
     transform: rotate(180deg);
+    transition-duration: var(--archive-menu-open-duration);
   }
 
   /* ===== 下拉菜单 ===== */
@@ -419,7 +575,7 @@ function getAgeForYear(year: number) {
     margin-top: 0.12rem;
     left: 0;
 
-    min-width: 11rem;
+    inline-size: max(100%, 10.75rem);
     max-height: 320px;
     overflow: auto;
 
@@ -431,23 +587,28 @@ function getAgeForYear(year: number) {
     box-shadow: 0 18px 40px oklch(0 0 0 / 0.35);
     display: grid;
     gap: 0.1rem;
-    z-index: 20;
-  }
-
-  .archive-filter-dropdown[open] .archive-filter-menu {
-    animation: archiveMenuIn 160ms ease-out;
+    z-index: 60;
     transform-origin: top left;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(8px) scale(0.985);
+    transition:
+      opacity var(--archive-menu-close-duration) var(--archive-motion-easing),
+      transform var(--archive-menu-close-duration) var(--archive-motion-easing),
+      visibility 0s linear var(--archive-menu-close-duration);
+    will-change: opacity, transform;
   }
 
-  @keyframes archiveMenuIn {
-    from {
-      opacity: 0;
-      transform: translateY(-0.35rem) scale(0.98);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-    }
+  .archive-filter-dropdown[data-open='1'] .archive-filter-menu {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateY(0) scale(1);
+    transition:
+      opacity var(--archive-menu-open-duration) var(--archive-motion-easing),
+      transform var(--archive-menu-open-duration) var(--archive-motion-easing),
+      visibility 0s linear 0s;
   }
 
   .archive-filter-option {
@@ -466,7 +627,14 @@ function getAgeForYear(year: number) {
     font-size: 0.88rem;
     line-height: 1.2;
 
-    transition: background-color 180ms ease, color 180ms ease;
+    transition:
+      background-color 180ms ease,
+      color 180ms ease,
+      transform var(--archive-menu-close-duration) var(--archive-motion-easing);
+  }
+
+  .archive-filter-option:active {
+    transform: translateY(1px);
   }
 
   .archive-filter-option:hover,
@@ -496,7 +664,10 @@ function getAgeForYear(year: number) {
     position: relative;
     padding-top: 0;
     border-top: 1px solid oklch(var(--un-preset-theme-colors-secondary) / 0.15);
-    transition: opacity 220ms ease, transform 220ms ease, max-height 220ms ease;
+    transition:
+      opacity var(--archive-layout-duration) var(--archive-motion-easing),
+      transform var(--archive-layout-duration) var(--archive-motion-easing),
+      max-height var(--archive-layout-duration) var(--archive-motion-easing);
     max-height: 999px;
     overflow: hidden;
     margin-bottom: 3.6rem;
@@ -568,7 +739,9 @@ function getAgeForYear(year: number) {
   .archive-year-stats {
     grid-area: 1 / 1;
     white-space: nowrap;
-    transition: opacity 220ms ease, transform 220ms ease;
+    transition:
+      opacity var(--archive-layout-duration) var(--archive-motion-easing),
+      transform var(--archive-layout-duration) var(--archive-motion-easing);
   }
 
   .archive-year-age {
@@ -621,8 +794,14 @@ function getAgeForYear(year: number) {
     max-height: 10rem;
     overflow: hidden;
 
-    transition: background-color 180ms ease, border-color 180ms ease, transform 180ms ease,
-      opacity 220ms ease, max-height 220ms ease, padding 220ms ease, margin 220ms ease;
+    transition:
+      background-color 180ms ease,
+      border-color 180ms ease,
+      transform var(--archive-layout-duration) var(--archive-motion-easing),
+      opacity var(--archive-layout-duration) var(--archive-motion-easing),
+      max-height var(--archive-layout-duration) var(--archive-motion-easing),
+      padding var(--archive-layout-duration) var(--archive-motion-easing),
+      margin var(--archive-layout-duration) var(--archive-motion-easing);
   }
 
   .archive-item + .archive-item {
@@ -683,6 +862,13 @@ function getAgeForYear(year: number) {
     white-space: nowrap;
   }
 
+  .archive-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    min-width: 0;
+  }
+
   .archive-title:hover {
     color: oklch(var(--un-preset-theme-colors-primary) / 1);
   }
@@ -716,12 +902,11 @@ function getAgeForYear(year: number) {
     }
 
     .archive-toolbar-left {
-      flex-wrap: wrap; /* 手机上允许换行，不挤 */
-      gap: 0.45rem;
+      grid-template-columns: var(--archive-filter-col-w) var(--archive-sort-col-w);
     }
 
     .archive-filter-menu {
-      min-width: 10rem;
+      inline-size: max(100%, 10rem);
       max-height: 260px;
     }
 
@@ -759,6 +944,8 @@ function getAgeForYear(year: number) {
 
   /* 减少动态：无动画 */
   @media (prefers-reduced-motion: reduce) {
+    .archive-filter-menu,
+    .archive-filter-caret,
     .archive-item,
     .archive-year,
     .archive-year-watermark,
@@ -768,6 +955,8 @@ function getAgeForYear(year: number) {
     }
   }
 
+  :global(html.reduce-motion) .archive-filter-menu,
+  :global(html.reduce-motion) .archive-filter-caret,
   :global(html.reduce-motion) .archive-item,
   :global(html.reduce-motion) .archive-year,
   :global(html.reduce-motion) .archive-year-watermark,

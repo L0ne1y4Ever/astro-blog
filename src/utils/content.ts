@@ -4,11 +4,19 @@ import path from 'node:path'
 import type { Language } from '@/i18n/config'
 import type { Post } from '@/types'
 import { getCollection, render } from 'astro:content'
-import { defaultLocale } from '@/config'
+import { base, defaultLocale } from '@/config'
 import { memoize } from '@/utils/cache'
 
 const metaCache = new Map<string, { minutes: number }>()
 const postsRoot = path.resolve(process.cwd(), 'src/content/posts')
+const postStatusLabelMap = {
+  idea: '想法',
+  ongoing: '进行中',
+  paused: '暂停',
+  completed: '已完成',
+} as const
+
+export type PostStatus = keyof typeof postStatusLabelMap
 
 export function isPostPublic(data: CollectionEntry<'posts'>['data']) {
   return data.visibility !== 'private' && !data.draft
@@ -52,6 +60,30 @@ export function getPostUpdatedAt(post: CollectionEntry<'posts'>) {
   catch {
     return post.data.published
   }
+}
+
+export function getPostStatusLabel(status?: CollectionEntry<'posts'>['data']['status']) {
+  if (!status) {
+    return ''
+  }
+
+  return postStatusLabelMap[status as PostStatus] ?? ''
+}
+
+export function getPostCoverURL(cover?: string) {
+  if (!cover) {
+    return ''
+  }
+
+  if (/^https?:\/\//.test(cover)) {
+    return cover
+  }
+
+  if (cover.startsWith('/')) {
+    return `${base}${cover}`
+  }
+
+  return ''
 }
 
 /**
@@ -178,6 +210,15 @@ async function _getPinnedPosts(lang?: Language) {
 
 export const getPinnedPosts = memoize(_getPinnedPosts)
 
+async function _getFeaturedPosts(lang?: Language) {
+  const posts = await getPosts(lang)
+  return posts
+    .filter(post => post.data.featured && !post.data.pin)
+    .sort((a, b) => b.data.published.valueOf() - a.data.published.valueOf())
+}
+
+export const getFeaturedPosts = memoize(_getFeaturedPosts)
+
 /**
  * Group posts by year and sort within each year
  *
@@ -211,6 +252,20 @@ async function _getPostsByYear(lang?: Language): Promise<Map<number, Post[]>> {
 }
 
 export const getPostsByYear = memoize(_getPostsByYear)
+
+async function _getPostsBySeries(series: string, lang?: Language) {
+  const normalizedSeries = series.trim()
+  if (!normalizedSeries) {
+    return []
+  }
+
+  const posts = await getPosts(lang)
+  return posts
+    .filter(post => (post.data.series || '').trim() === normalizedSeries)
+    .sort((a, b) => a.data.published.valueOf() - b.data.published.valueOf())
+}
+
+export const getPostsBySeries = memoize(_getPostsBySeries)
 
 /**
  * Group posts by their tags

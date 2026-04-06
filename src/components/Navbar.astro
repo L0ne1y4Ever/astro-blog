@@ -15,8 +15,20 @@ const isMoreActive = isSearchActive || isArchiveActive || isLinksActive
 
 function getNavItemClass(isActive: boolean) {
   return isActive
-    ? 'highlight-static c-primary font-bold after:bottom-0.7em'
-    : 'highlight-hover transition-[colors,font-weight] after:bottom-0.7em hover:(c-primary font-bold)'
+    ? 'highlight-static c-primary font-bold after:bottom-0.7em nav-more-highlight'
+    : 'highlight-hover transition-[colors,font-weight] after:bottom-0.7em hover:(c-primary font-bold) nav-more-highlight'
+}
+
+function getNavMoreItemClass(isActive: boolean) {
+  return isActive
+    ? 'highlight-static c-primary font-bold after:bottom-0.7em nav-more-highlight'
+    : 'highlight-hover transition-[colors,font-weight] after:bottom-0.7em hover:(c-primary font-bold) nav-more-highlight'
+}
+
+function getNavMoreToggleClass(isActive: boolean) {
+  return isActive
+    ? 'highlight-static c-primary font-bold after:bottom-0.7em nav-more-highlight'
+    : 'highlight-hover transition-[colors,font-weight] after:bottom-0.7em hover:(c-primary font-bold) nav-more-highlight'
 }
 
 const navItems = [
@@ -41,32 +53,32 @@ const moreItems = [
   {
     href: '/search/',
     label: currentUI.search,
-    className: getNavItemClass(isSearchActive),
+    className: getNavMoreItemClass(isSearchActive),
     type: 'search',
   },
   {
     href: '/archive/',
     label: currentUI.archive,
-    className: getNavItemClass(isArchiveActive),
+    className: getNavMoreItemClass(isArchiveActive),
   },
   {
     href: '/links/',
     label: currentUI.links,
-    className: getNavItemClass(isLinksActive),
+    className: getNavMoreItemClass(isLinksActive),
   },
 ]
 ---
 
 <nav
   aria-label="Site Navigation"
-  data-mode={isMoreActive ? 'more' : 'main'}
+  data-nav-open={isMoreActive ? '1' : '0'}
   class:list={[
     'mb-10.5 text-3.6 font-semibold leading-2.45em font-navbar',
     'lg:(uno-desktop-column text-4 bottom-[min(9.04rem+3.85vw,12.5rem)]) cjk:tracking-wide',
     isPost ? 'hidden lg:block' : '',
   ]}
 >
-  <ul>
+  <ul class="nav-list">
     {navItems.map(item => (
       <li class="nav-primary-item">
         <a
@@ -78,48 +90,51 @@ const moreItems = [
       </li>
     ))}
     <li>
-      <details
-        class="nav-more-details"
-        open={isMoreActive}
+      <div
+        class="nav-more-shell"
+        aria-hidden="false"
       >
-        <summary
-          class:list={[
-            getNavItemClass(isMoreActive),
-            'nav-more-summary cursor-pointer select-none',
-          ]}
+        <button
+          type="button"
+          class="nav-more-toggle cursor-pointer select-none"
+          aria-expanded={isMoreActive ? 'true' : 'false'}
+          data-nav-more-trigger
         >
-          {currentUI.more}
-        </summary>
-        <ul
-          class:list={[
-            'nav-more-list mt-1.5 pl-3 space-y-1.5',
-            isMoreActive ? 'pl-0 space-y-1' : '',
-          ]}
-        >
-          {moreItems.map(item => (
-            <li>
-              {item.type === 'search'
-                ? (
-                    <button
-                      type="button"
-                      data-search-open
-                      class={`nav-search-button ${item.className}`}
-                    >
-                      {item.label}
-                    </button>
-                  )
-                : (
-                    <a
-                      href={getLocalizedPath(item.href)}
-                      class={item.className}
-                    >
-                      {item.label}
-                    </a>
-                  )}
-            </li>
-          ))}
-        </ul>
-      </details>
+          <span class={getNavMoreToggleClass(isMoreActive)}>
+            {currentUI.more}
+          </span>
+        </button>
+        <div class="nav-more-panel" aria-hidden={isMoreActive ? 'false' : 'true'}>
+          <ul class="nav-more-list">
+            {moreItems.map((item, index) => (
+              <li style={`--nav-item-index:${index};`}>
+                {item.type === 'search'
+                  ? (
+                      <button
+                        type="button"
+                        data-search-open
+                        class="nav-search-button"
+                      >
+                        <span class={item.className}>
+                          {item.label}
+                        </span>
+                      </button>
+                    )
+                  : (
+                      <a
+                        href={getLocalizedPath(item.href)}
+                        class="nav-more-link"
+                      >
+                        <span class={item.className}>
+                          {item.label}
+                        </span>
+                      </a>
+                    )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
     </li>
   </ul>
 </nav>
@@ -128,25 +143,52 @@ const moreItems = [
   (function () {
     function initNavMoreToggle() {
       const nav = document.querySelector('nav[aria-label="Site Navigation"]')
-      if (!nav) return
-      const details = nav.querySelector('.nav-more-details')
-      if (!details) return
+      if (!nav || nav.dataset.navBound === '1') return
 
-      const updateMode = () => {
-        nav.dataset.mode = details.open ? 'more' : 'main'
+      const trigger = nav.querySelector('[data-nav-more-trigger]')
+      const panel = nav.querySelector('.nav-more-panel')
+      if (!(trigger instanceof HTMLElement) || !(panel instanceof HTMLElement)) return
+
+      let isOpen = nav.dataset.navOpen === '1'
+
+      const setOpen = (nextOpen) => {
+        isOpen = nextOpen
+        nav.dataset.navOpen = nextOpen ? '1' : '0'
+        trigger.setAttribute('aria-expanded', nextOpen ? 'true' : 'false')
+        panel.setAttribute('aria-hidden', nextOpen ? 'false' : 'true')
       }
 
-      updateMode()
+      const controller = new AbortController()
 
-      if (details.dataset.navBound !== '1') {
-        details.dataset.navBound = '1'
-        details.addEventListener('toggle', updateMode)
+      trigger.addEventListener('click', () => {
+        setOpen(!isOpen)
+      }, { signal: controller.signal })
+
+      document.addEventListener('keydown', (event) => {
+        if (!isOpen || event.key !== 'Escape') return
+        setOpen(false)
+        trigger.focus()
+      }, { signal: controller.signal })
+
+      setOpen(isOpen)
+      nav.dataset.navBound = '1'
+      nav.__navCleanup = () => {
+        controller.abort()
+        delete nav.dataset.navBound
+        delete nav.__navCleanup
       }
     }
 
+    function cleanupNavMoreToggle() {
+      document.querySelectorAll('nav[aria-label="Site Navigation"]').forEach((nav) => {
+        nav.__navCleanup?.()
+      })
+    }
+
     document.addEventListener('astro:page-load', initNavMoreToggle)
+    document.addEventListener('astro:before-swap', cleanupNavMoreToggle)
     if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initNavMoreToggle)
+      document.addEventListener('DOMContentLoaded', initNavMoreToggle, { once: true })
     }
     else {
       initNavMoreToggle()
@@ -155,47 +197,116 @@ const moreItems = [
 </script>
 
 <style>
+  :root {
+    --nav-motion-easing: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .nav-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
   .nav-primary-item {
     max-height: 3.2em;
     opacity: 1;
     transform: translateY(0);
     overflow: hidden;
-    transition: max-height 260ms ease, opacity 200ms ease, transform 260ms ease;
+    transition:
+      max-height 220ms var(--nav-motion-easing),
+      opacity 180ms var(--nav-motion-easing),
+      transform 240ms var(--nav-motion-easing);
   }
 
-  nav[data-mode='more'] .nav-primary-item {
+  nav[data-nav-open='1'] .nav-primary-item {
     max-height: 0;
     opacity: 0;
     transform: translateY(-0.35em);
     pointer-events: none;
   }
 
-  .nav-more-details > .nav-more-list {
-    max-height: 0;
-    opacity: 0;
-    transform: translateY(-0.35em);
-    overflow: hidden;
-    transition: max-height 280ms ease, opacity 220ms ease, transform 280ms ease;
+  .nav-more-toggle {
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    color: inherit;
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+    text-align: left;
   }
 
-  .nav-more-details[open] > .nav-more-list {
-    max-height: 12rem;
+  .nav-more-toggle > span {
+    display: inline-block;
+  }
+
+  nav[data-nav-open='1'] .nav-more-toggle > span {
+    color: oklch(var(--un-preset-theme-colors-primary));
+    font-weight: 700;
+  }
+
+  .nav-more-highlight::after {
+    background-color: oklch(0.74 0.09 235 / 0.42);
+  }
+
+  .nav-list > li > a.highlight-static::after,
+  .nav-list > li > a.highlight-hover::after,
+  .nav-more-list span.highlight-static::after,
+  .nav-more-list span.highlight-hover::after,
+  .nav-more-toggle > span.highlight-static::after,
+  .nav-more-toggle > span.highlight-hover::after {
+    left: -0.26em;
+    width: calc(100% + 0.76em);
+  }
+
+  .nav-more-panel {
+    display: grid;
+    grid-template-rows: 0fr;
+    pointer-events: none;
+    transition: grid-template-rows 220ms var(--nav-motion-easing);
+  }
+
+  nav[data-nav-open='1'] .nav-more-panel {
+    grid-template-rows: 1fr;
+    pointer-events: auto;
+  }
+
+  .nav-more-panel > .nav-more-list {
+    min-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transform: translateY(-0.28em);
+    transition:
+      opacity 180ms var(--nav-motion-easing),
+      transform 220ms var(--nav-motion-easing);
+  }
+
+  nav[data-nav-open='1'] .nav-more-panel > .nav-more-list {
     opacity: 1;
     transform: translateY(0);
   }
 
-  @supports selector(:has(*)) {
-    nav:has(.nav-more-details[open]) .nav-primary-item {
-      max-height: 0;
-      opacity: 0;
-      transform: translateY(-0.35em);
-      pointer-events: none;
-    }
+  .nav-more-list li {
+    opacity: 0;
+    transform: translateY(-0.24em);
+    transition:
+      opacity 180ms var(--nav-motion-easing),
+      transform 220ms var(--nav-motion-easing);
+  }
+
+  nav[data-nav-open='1'] .nav-more-list li {
+    opacity: 1;
+    transform: translateY(0);
+    transition-delay: calc(var(--nav-item-index, 0) * 24ms + 20ms);
   }
 
   @media (prefers-reduced-motion: reduce) {
     .nav-primary-item,
-    .nav-more-details > .nav-more-list {
+    .nav-more-panel,
+    .nav-more-panel > .nav-more-list,
+    .nav-more-list li {
       transition: none;
     }
   }
@@ -209,26 +320,51 @@ const moreItems = [
     cursor: pointer;
   }
 
+  .nav-more-link {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .nav-more-list li,
+  .nav-more-list a,
+  .nav-more-list button {
+    display: block;
+    width: 100%;
+    text-align: left;
+  }
+
+  .nav-more-list span.highlight-static,
+  .nav-more-list span.highlight-hover {
+    vertical-align: baseline;
+  }
+
+  .nav-more-list {
+    margin-top: 0.8rem;
+    padding-left: 0;
+    list-style: none;
+  }
+
   :global(html.reduce-motion) .nav-primary-item,
-  :global(html.reduce-motion) .nav-more-details > .nav-more-list {
+  :global(html.reduce-motion) .nav-more-panel,
+  :global(html.reduce-motion) .nav-more-panel > .nav-more-list,
+  :global(html.reduce-motion) .nav-more-list li {
     transition: none;
   }
 
   .nav-more-list li + li {
-    margin-top: 0.25rem !important;
+    margin-top: 0.82rem !important;
   }
 
-  /* 2. 关键：缩小选项本身的行高 */
-  /* 导航栏默认是 2.45em，对于下拉列表来说太高了 */
   .nav-more-list a,
   .nav-more-list button {
-    line-height: 1.4 !important; /* 缩小行高，让文字更紧凑 */
-    padding-top: 0.2rem;
-    padding-bottom: 0.2rem;
-    display: inline-block; /* 确保 padding 和 margin 生效 */
+    line-height: 1.2 !important;
+    padding-top: 0.04rem;
+    padding-bottom: 0.04rem;
+    display: block;
   }
-  /* 如果你想调整“更多”按钮与下方第一个选项的距离 */
-  .nav-more-list {
-    margin-top: -1rem !important; 
+
+  .nav-more-list span.highlight-static::after,
+  .nav-more-list span.highlight-hover::after {
+    bottom: 0.08em !important;
   }
 </style>
