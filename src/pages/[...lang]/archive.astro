@@ -200,243 +200,7 @@ function getAgeForYear(year: number) {
 </Layout>
 
 <script>
-import { animateTextSwap, createDropdownController, runFlipTransition } from '@/scripts/filter-interactions'
-
-type ArchiveSortKey = 'created' | 'updated'
-type ArchiveRoot = HTMLElement & {
-  __archiveCleanup?: () => void
-}
-
-function initArchiveInteractions() {
-  const root = document.querySelector<ArchiveRoot>('[data-archive-root]')
-  if (!root || root.dataset.archiveBound === '1') return
-
-  const yearsContainer = root.querySelector<HTMLElement>('.archive-years')
-  if (!yearsContainer) return
-
-  const filterLabel = root.querySelector<HTMLElement>('[data-dropdown-label]')
-  const sortLabel = root.querySelector<HTMLElement>('.archive-sort-label')
-  const filterButtons = Array.from(root.querySelectorAll<HTMLElement>('.archive-filter-option[data-filter]'))
-  const items = Array.from(root.querySelectorAll<HTMLElement>('.archive-item'))
-  const years = Array.from(root.querySelectorAll<HTMLElement>('.archive-year'))
-  const dropdown = createDropdownController(root.querySelector<HTMLElement>('[data-filter-dropdown]'))
-  const originalYearOrder = years.slice()
-  const originalItemsMap = new Map<HTMLElement, HTMLElement[]>()
-  let currentSortKey: ArchiveSortKey = 'created'
-
-  years.forEach((year) => {
-    originalItemsMap.set(year, Array.from(year.querySelectorAll<HTMLElement>('.archive-item')))
-  })
-
-  const getKeyTime = (item: HTMLElement, key: ArchiveSortKey) => {
-    const value = key === 'updated' ? item.dataset.updated : item.dataset.created
-    const time = Number(value)
-    return Number.isFinite(time) ? time : 0
-  }
-
-  const updateFilterButtons = (filter: string) => {
-    filterButtons.forEach((button) => {
-      const isActive = button.dataset.filter === filter
-      button.classList.toggle('is-active', isActive)
-      button.setAttribute('aria-selected', isActive ? 'true' : 'false')
-
-      if (!isActive || !filterLabel) {
-        return
-      }
-
-      const nextLabel = button.dataset.triggerLabel || button.textContent?.trim() || '全部分类'
-      if (filterLabel.textContent !== nextLabel) {
-        filterLabel.textContent = nextLabel
-        animateTextSwap(filterLabel)
-      }
-    })
-  }
-
-  const syncSortLabel = () => {
-    if (!sortLabel) {
-      return
-    }
-
-    const nextLabel = currentSortKey === 'updated' ? '更新日期' : '创建日期'
-    if (sortLabel.textContent !== nextLabel) {
-      sortLabel.textContent = nextLabel
-      animateTextSwap(sortLabel)
-    }
-  }
-
-  const reorderBySortKey = () => {
-    const yearOrderIndex = new Map(originalYearOrder.map((year, index) => [year, index]))
-    const yearEntries = years.map((year) => {
-      const list = year.querySelector<HTMLElement>('.archive-list')
-      const itemsInYear = originalItemsMap.get(year) ?? []
-      const orderedItems = itemsInYear
-        .slice()
-        .sort((a, b) => getKeyTime(b, currentSortKey) - getKeyTime(a, currentSortKey))
-
-      orderedItems.forEach(item => list?.appendChild(item))
-
-      const visibleItems = orderedItems.filter(item => !item.classList.contains('is-hidden'))
-      const maxTime = visibleItems.length > 0
-        ? Math.max(...visibleItems.map(item => getKeyTime(item, currentSortKey)))
-        : -1
-
-      return { year, maxTime, index: yearOrderIndex.get(year) ?? 0 }
-    })
-
-    yearEntries
-      .sort((a, b) => (b.maxTime - a.maxTime) || (a.index - b.index))
-      .forEach(entry => yearsContainer.appendChild(entry.year))
-  }
-
-  let activeFilterValues: string[] = []
-
-  const updateArchiveState = (filter: string) => {
-    updateFilterButtons(filter)
-    syncSortLabel()
-
-    items.forEach((item) => {
-      const categories = (item.dataset.categories || '').split(',').filter(Boolean)
-      const match = filter === 'all' || categories.some(category => activeFilterValues.includes(category))
-      item.classList.toggle('is-hidden', !match)
-      item.setAttribute('aria-hidden', match ? 'false' : 'true')
-    })
-
-    years.forEach((year) => {
-      year.classList.remove('is-active')
-      const visibleItems = year.querySelectorAll('.archive-item:not(.is-hidden)')
-      year.classList.toggle('is-hidden', visibleItems.length === 0)
-    })
-
-    reorderBySortKey()
-  }
-
-  const applyFilter = (filter: string, filterValues: string[] = [], animate: boolean = true) => {
-    const sync = () => updateArchiveState(filter)
-
-    activeFilterValues = filterValues
-
-    if (animate) {
-      runFlipTransition(root, ['.archive-item', '.archive-year'], sync)
-    }
-    else {
-      sync()
-    }
-
-    dropdown.close()
-  }
-
-  const applySort = (key: ArchiveSortKey, animate: boolean = true) => {
-    const sync = () => {
-      currentSortKey = key
-      syncSortLabel()
-      reorderBySortKey()
-    }
-
-    if (animate) {
-      runFlipTransition(root, ['.archive-item', '.archive-year'], sync)
-    }
-    else {
-      sync()
-    }
-
-    dropdown.close()
-  }
-
-  const interactionController = new AbortController()
-
-  root.addEventListener('click', (event) => {
-    const target = event.target
-    if (!(target instanceof Element)) return
-
-    const filterButton = target.closest<HTMLElement>('.archive-filter-option[data-filter]')
-    if (filterButton && root.contains(filterButton)) {
-      const filterValues = (filterButton.dataset.filterValues || '')
-        .split(',')
-        .map(value => value.trim())
-        .filter(Boolean)
-      applyFilter(filterButton.dataset.filter || 'all', filterValues)
-      return
-    }
-
-    if (target.closest('[data-sort-button]')) {
-      const nextSortKey: ArchiveSortKey = currentSortKey === 'created' ? 'updated' : 'created'
-      applySort(nextSortKey)
-    }
-  }, { signal: interactionController.signal })
-
-  root.addEventListener('pointerover', (event) => {
-    const target = event.target
-    if (!(target instanceof Element)) return
-
-    const item = target.closest<HTMLElement>('.archive-item')
-    if (!item || !root.contains(item)) return
-
-    item.closest<HTMLElement>('.archive-year')?.classList.add('is-active')
-  }, { signal: interactionController.signal })
-
-  root.addEventListener('pointerout', (event) => {
-    const target = event.target
-    if (!(target instanceof Element)) return
-
-    const item = target.closest<HTMLElement>('.archive-item')
-    if (!item || !root.contains(item)) return
-
-    const year = item.closest<HTMLElement>('.archive-year')
-    const relatedTarget = event.relatedTarget
-    const relatedNode = relatedTarget instanceof Node ? relatedTarget : null
-    if (year && (!relatedNode || !year.contains(relatedNode))) {
-      year.classList.remove('is-active')
-    }
-  }, { signal: interactionController.signal })
-
-  root.addEventListener('focusin', (event) => {
-    const target = event.target
-    if (!(target instanceof Element)) return
-
-    target.closest<HTMLElement>('.archive-item')?.closest<HTMLElement>('.archive-year')?.classList.add('is-active')
-  }, { signal: interactionController.signal })
-
-  root.addEventListener('focusout', (event) => {
-    const target = event.target
-    if (!(target instanceof Element)) return
-
-    const year = target.closest<HTMLElement>('.archive-item')?.closest<HTMLElement>('.archive-year')
-    const relatedTarget = event.relatedTarget
-    const relatedNode = relatedTarget instanceof Node ? relatedTarget : null
-    if (year && (!relatedNode || !year.contains(relatedNode))) {
-      year.classList.remove('is-active')
-    }
-  }, { signal: interactionController.signal })
-
-  root.dataset.archiveBound = '1'
-  root.__archiveCleanup = () => {
-    interactionController.abort()
-    dropdown.destroy()
-    delete root.dataset.archiveBound
-    delete root.__archiveCleanup
-  }
-
-  const activeButton = root.querySelector<HTMLElement>('.archive-filter-option.is-active[data-filter]')
-  const initialFilterValues = (activeButton?.dataset.filterValues || '')
-    .split(',')
-    .map(value => value.trim())
-    .filter(Boolean)
-  applyFilter(activeButton?.dataset.filter || 'all', initialFilterValues, false)
-}
-
-function cleanupArchiveInteractions() {
-  document.querySelectorAll<ArchiveRoot>('[data-archive-root]').forEach(root => root.__archiveCleanup?.())
-}
-
-document.addEventListener('astro:page-load', initArchiveInteractions)
-document.addEventListener('astro:before-swap', cleanupArchiveInteractions)
-
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initArchiveInteractions, { once: true })
-}
-else {
-  initArchiveInteractions()
-}
+  import '@/scripts/archive-filters'
 </script>
 
 <style>
@@ -445,10 +209,20 @@ else {
     --archive-control-h: 1.85rem;
     --archive-menu-open-duration: 180ms;
     --archive-menu-close-duration: 140ms;
-    --archive-layout-duration: 240ms;
+    --archive-layout-duration: 280ms;
     --archive-motion-easing: cubic-bezier(0.22, 1, 0.36, 1);
     --archive-filter-col-w: 7.5rem;
     --archive-sort-col-w: 6.25rem;
+  }
+
+  [data-archive-root][data-layout-animating='1'] .archive-year,
+  [data-archive-root][data-layout-animating='1'] .archive-item {
+    will-change: opacity, max-height, transform;
+  }
+
+  [data-archive-root][data-layout-animating='1'] .archive-item:hover,
+  [data-archive-root][data-layout-animating='1'] .archive-item:focus-within {
+    transform: none;
   }
 
   /* ===== 顶部工具栏 ===== */
@@ -897,17 +671,98 @@ else {
   @media (max-width: 768px) {
     .archive-toolbar {
       flex-direction: column;
-      align-items: flex-start;
+      align-items: stretch;
       gap: 0.6rem;
     }
 
     .archive-toolbar-left {
-      grid-template-columns: var(--archive-filter-col-w) var(--archive-sort-col-w);
+      display: flex;
+      align-items: stretch;
+      flex-wrap: nowrap;
+      position: relative;
+      width: 100%;
+      gap: 0.48rem;
+    }
+
+    .archive-summary {
+      width: 100%;
+      justify-content: flex-end;
+      font-size: 0.82rem;
+    }
+
+    .archive-filter-dropdown {
+      position: relative;
+      flex: 1 1 auto;
+      min-width: 0;
+      inline-size: auto;
+    }
+
+    .archive-filter-trigger,
+    .archive-filter-plain {
+      height: 2.3rem;
+      padding: 0 0.62rem;
+      border-radius: 0.74rem;
+      background-color: oklch(var(--un-preset-theme-colors-secondary) / 0.06);
+      border-color: oklch(var(--un-preset-theme-colors-secondary) / 0.14);
+      gap: 0.32rem;
+      font-size: 0.84rem;
+      line-height: 1;
+    }
+
+    .archive-filter-trigger {
+      justify-content: flex-start;
+      min-width: 0;
+    }
+
+    .archive-filter-plain {
+      inline-size: auto;
+      flex: none;
+      min-inline-size: 5.55rem;
+      justify-content: center;
+    }
+
+    .archive-filter-icon,
+    .archive-filter-icon svg {
+      width: 0.82rem;
+      height: 0.82rem;
+    }
+
+    .archive-filter-label,
+    .archive-sort-label {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-size: inherit;
+    }
+
+    .archive-filter-label {
+      flex: 1;
+    }
+
+    .archive-filter-caret {
+      margin-left: auto;
     }
 
     .archive-filter-menu {
-      inline-size: max(100%, 10rem);
-      max-height: 260px;
+      left: 0;
+      right: auto;
+      margin-top: 0.24rem;
+      inline-size: min(13.8rem, calc(100vw - 2.4rem));
+      min-width: 0;
+      max-width: none;
+      max-height: min(15.5rem, 48vh);
+      border-radius: 0.82rem;
+      padding: 0.22rem;
+      z-index: 90;
+      transform-origin: top left;
+      box-shadow: 0 12px 28px oklch(0 0 0 / 0.24);
+    }
+
+    .archive-filter-option {
+      min-height: 2.1rem;
+      padding: 0.44rem 0.54rem;
+      font-size: 0.84rem;
+      line-height: 1.15;
+      border-radius: 0.62rem;
     }
 
     .archive-year-watermark {
@@ -939,6 +794,11 @@ else {
 
     .archive-list {
       padding-top: 2.6rem;
+    }
+
+    .archive-item:hover,
+    .archive-item:focus-within {
+      transform: none;
     }
   }
 

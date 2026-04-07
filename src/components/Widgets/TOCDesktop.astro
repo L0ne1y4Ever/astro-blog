@@ -1,0 +1,363 @@
+---
+import type { TocPanelProps } from '@/components/Widgets/toc-shared'
+import TocIcon from '@/assets/icons/toc-icon.svg'
+
+const {
+  filteredHeadings,
+  seriesItems,
+  currentUI,
+  hasToc,
+  hasSeries,
+} = Astro.props as TocPanelProps
+---
+
+<aside
+  id="toc-container"
+  class="mb-6 uno-round-border bg-secondary/5 2xl:(fixed top-44.5 max-w-[min(calc(50vw-38rem),13rem)] border-none bg-secondary/0)"
+>
+  {hasToc && (
+    <>
+      <input
+        type="checkbox"
+        id="toc-toggle"
+        hidden
+      />
+      <div class="relative h-12 w-full">
+        <label
+          for="toc-toggle"
+          class="toc-toggle-label absolute inset-0 flex cursor-pointer items-center 2xl:(static flex c-secondary/60 transition-colors ease-out hover:c-primary)"
+        >
+          <span id="toc-mobile-text">
+            {currentUI.toc}
+          </span>
+
+          <TocIcon
+            id="toc-desktop-icon"
+            aria-hidden="true"
+            class="ml-4 hidden aspect-square w-4.2 2xl:(mt-4 block origin-center active:scale-90!)"
+            fill="currentColor"
+          />
+        </label>
+      </div>
+
+      <div id="toc-accordion-wrapper">
+        <nav
+          id="toc-accordion-content"
+          aria-label="Table of Contents"
+        >
+          <ul id="toc-links-list">
+            {filteredHeadings.map(heading => (
+              <li
+                class:list={{
+                  'ml-0': heading.depth === 2,
+                  'ml-4': heading.depth === 3,
+                  'ml-8': heading.depth === 4,
+                }}
+              >
+                <a
+                  href={`#${heading.slug}`}
+                  class:list={[
+                    { 'no-heti toc-links-h2': heading.depth === 2 },
+                    { 'no-heti toc-links-h3': heading.depth === 3 },
+                    { 'no-heti toc-links-h4': heading.depth === 4 },
+                  ]}
+                >
+                  {heading.text}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      </div>
+    </>
+  )}
+
+  {hasSeries && (
+    <section
+      id="post-series-section"
+      class:list={[
+        'post-series',
+        hasToc ? 'post-series--with-toc' : 'post-series--standalone',
+      ]}
+    >
+      <input
+        type="checkbox"
+        id="series-toggle"
+        hidden
+      />
+      <div class="relative h-12 w-full">
+        <label
+          for="series-toggle"
+          class="post-series-toggle-label absolute inset-0 flex cursor-pointer items-center"
+        >
+          <span id="series-mobile-text">
+            {currentUI.series}
+          </span>
+          <span id="series-desktop-trigger">
+            <TocIcon
+              id="series-desktop-icon"
+              aria-hidden="true"
+              class="aspect-square w-4.2 origin-center active:scale-90!"
+              fill="currentColor"
+            />
+            <span class="post-series-heading">{currentUI.series}</span>
+          </span>
+        </label>
+      </div>
+      <div id="series-accordion-wrapper">
+        <div id="series-accordion-content">
+          <ol id="series-links-list" class="post-series-list">
+            {seriesItems.map(item => (
+              <li>
+                <a
+                  href={item.href}
+                  class:list={[
+                    'post-series-link',
+                    item.isCurrent ? 'is-current' : '',
+                  ]}
+                  aria-current={item.isCurrent ? 'page' : undefined}
+                >
+                  <span class="post-series-date font-time">{item.date}</span>
+                  <span class="post-series-name">{item.title}</span>
+                </a>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </div>
+    </section>
+  )}
+</aside>
+
+<style>
+  #toc-container {
+    --toc-side-offset: clamp(0.9rem, 1.35vw, 1.6rem);
+  }
+
+  @media (max-width: 768px) {
+    #toc-container {
+      display: none;
+    }
+  }
+
+  @media (min-width: 1536px) {
+    #toc-container {
+      left: var(--toc-side-offset);
+    }
+  }
+
+  #toc-mobile-text {
+    --at-apply: 'ml-4 font-semibold 2xl:hidden';
+  }
+
+  #series-mobile-text {
+    --at-apply: 'ml-4 text-sm font-semibold 2xl:hidden';
+  }
+
+  #toc-links-list {
+    --at-apply: 'mb-2.5 mt-1 list-none pl-0 2xl:(mb-1 space-y-1) space-y-1.1';
+    scroll-target-group: auto;
+  }
+
+  #series-links-list {
+    --at-apply: 'm-0 list-none p-0';
+  }
+
+  a:target-current {
+    color: oklch(var(--un-preset-theme-colors-primary) / 0.94);
+    font-weight: 500;
+  }
+
+  .toc-links-h2,
+  .toc-links-h3,
+  .toc-links-h4 {
+    --at-apply: 'text-balance text-sm font-normal no-underline after:bottom-0.15em 2xl:(text-3.2 c-secondary/80 hover:c-primary hover:font-medium)';
+    transition: color 0.15s ease-out, font-weight 0.15s ease-out;
+  }
+
+  #toc-toggle:checked ~ #toc-accordion-wrapper #toc-accordion-content {
+    --at-apply: 'overflow-y-auto 2xl:overflow-hidden';
+  }
+
+  #toc-accordion-content {
+    --at-apply: 'max-h-59 overflow-hidden pl-4 pr-6 2xl:(max-h-[calc(100vh-27.5rem)] overflow-y-auto scrollbar-hidden pl-4 pr-4)';
+    scrollbar-width: thin;
+    scrollbar-color: oklch(var(--un-preset-theme-colors-secondary) / 0.15) transparent;
+  }
+
+  #toc-accordion-content::-webkit-scrollbar {
+    --at-apply: 'hidden';
+  }
+
+  .post-series {
+    --at-apply: 'pb-0';
+  }
+
+  .post-series--with-toc {
+    border-top: 1px solid oklch(var(--un-preset-theme-colors-secondary) / 0.12);
+    margin-top: 0.8rem;
+    padding-top: 0.95rem;
+  }
+
+  .post-series--standalone {
+    --at-apply: 'pt-0';
+  }
+
+  .post-series-toggle-label {
+    --at-apply: 'c-secondary/72 transition-colors ease-out hover:c-primary';
+  }
+
+  #series-desktop-trigger {
+    --at-apply: 'ml-4 hidden items-center gap-2.4 2xl:flex';
+  }
+
+  #series-toggle:checked ~ #series-accordion-wrapper #series-accordion-content {
+    --at-apply: 'overflow-y-auto 2xl:overflow-hidden';
+  }
+
+  #series-accordion-content {
+    --at-apply: 'max-h-72 overflow-hidden px-4 2xl:(max-h-[calc(100vh-32rem)] overflow-y-auto scrollbar-hidden px-4 pb-0)';
+    scrollbar-width: thin;
+    scrollbar-color: oklch(var(--un-preset-theme-colors-secondary) / 0.15) transparent;
+  }
+
+  #series-accordion-content::-webkit-scrollbar {
+    --at-apply: 'hidden';
+  }
+
+  .post-series-heading {
+    --at-apply: 'text-sm font-semibold';
+  }
+
+  .post-series-list {
+    --at-apply: 'space-y-3 2xl:(space-y-2.8)';
+  }
+
+  .post-series-link {
+    --at-apply: 'block no-underline c-secondary/82';
+    transition: color 0.18s ease;
+  }
+
+  .post-series-link:hover,
+  .post-series-link.is-current {
+    color: oklch(var(--un-preset-theme-colors-primary) / 0.92);
+  }
+
+  .post-series-date {
+    --at-apply: 'mb-1 block text-xs op-74';
+  }
+
+  .post-series-name {
+    --at-apply: 'block text-sm leading-6';
+    text-wrap: pretty;
+  }
+
+  #toc-accordion-wrapper {
+    --at-apply: 'grid rows-[0fr]';
+    transition: grid-template-rows 0.3s ease-in-out;
+  }
+
+  #toc-accordion-wrapper > *,
+  #series-accordion-wrapper > * {
+    min-height: 0;
+  }
+
+  #toc-toggle:checked ~ #toc-accordion-wrapper {
+    --at-apply: 'rows-[1fr]';
+  }
+
+  #toc-accordion-wrapper {
+    --at-apply: '2xl:rows-[1fr]';
+  }
+
+  #toc-toggle:checked ~ #toc-accordion-wrapper {
+    --at-apply: '2xl:rows-[0fr]';
+  }
+
+  #series-accordion-wrapper {
+    --at-apply: 'grid rows-[0fr]';
+    transition: grid-template-rows 0.3s ease-in-out;
+  }
+
+  #series-toggle:checked ~ #series-accordion-wrapper {
+    --at-apply: 'rows-[1fr]';
+  }
+
+  #series-accordion-wrapper {
+    --at-apply: '2xl:rows-[1fr]';
+  }
+
+  #series-toggle:checked ~ #series-accordion-wrapper {
+    --at-apply: '2xl:rows-[0fr]';
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #toc-accordion-wrapper,
+    #series-accordion-wrapper {
+      transition: none;
+    }
+  }
+
+  :global(html.reduce-motion) #toc-accordion-wrapper,
+  :global(html.reduce-motion) #series-accordion-wrapper {
+    transition: none;
+  }
+</style>
+
+<script>
+const is2xl = window.matchMedia('(min-width: 1536px)')
+
+let ticking = false
+let lastLink: Element | null = null
+
+function scrollToActiveLink() {
+  const tocList = document.getElementById('toc-links-list')
+  if (!tocList) {
+    ticking = false
+    return
+  }
+
+  const activeLink = tocList.querySelector('a:target-current')
+  if (activeLink && activeLink !== lastLink) {
+    activeLink.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    lastLink = activeLink
+  }
+
+  ticking = false
+}
+
+function handleScroll() {
+  if (!ticking && is2xl.matches) {
+    window.requestAnimationFrame(scrollToActiveLink)
+    ticking = true
+  }
+}
+
+function setupAutoScroll() {
+  ticking = false
+  lastLink = null
+
+  const tocList = document.getElementById('toc-links-list')
+  if (!tocList || !CSS.supports('selector(:target-current)')) {
+    return
+  }
+
+  document.addEventListener('scroll', handleScroll, { passive: true })
+}
+
+function cleanupAutoScroll() {
+  document.removeEventListener('scroll', handleScroll)
+  ticking = false
+  lastLink = null
+}
+
+document.addEventListener('astro:page-load', setupAutoScroll)
+document.addEventListener('astro:before-swap', cleanupAutoScroll)
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', setupAutoScroll, { once: true })
+}
+else {
+  setupAutoScroll()
+}
+</script>

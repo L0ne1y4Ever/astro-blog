@@ -120,202 +120,7 @@ const visiblePostsByYear = new Map(
 </Layout>
 
 <script>
-  import { animateTextSwap, createDropdownController, runFlipTransition } from '@/scripts/filter-interactions'
-
-  type PostSortKey = 'created' | 'updated'
-  type PostFilterRoot = HTMLElement & {
-    __postFilterCleanup?: () => void
-  }
-
-  function initPostFilters() {
-    const root = document.querySelector<PostFilterRoot>('[data-posts-root]')
-    if (!root || root.dataset.filterBound === '1') return
-
-    const triggerLabel = root.querySelector<HTMLElement>('[data-dropdown-label]')
-    const sortLabel = root.querySelector<HTMLElement>('.post-sort-label')
-    const buttons = Array.from(root.querySelectorAll<HTMLElement>('.post-filter-option[data-filter]'))
-    const items = Array.from(root.querySelectorAll<HTMLElement>('.post-item'))
-    const sections = Array.from(root.querySelectorAll<HTMLElement>('.post-year-section'))
-    const sortableSections = sections.filter(section =>
-      !section.classList.contains('post-year-section--pinned')
-      && !section.classList.contains('post-year-section--featured'),
-    )
-    const dropdown = createDropdownController(root.querySelector<HTMLElement>('[data-filter-dropdown]'))
-    const originalSectionOrder = sortableSections.slice()
-    const originalItemsMap = new Map<HTMLElement, HTMLElement[]>()
-    let currentSortKey: PostSortKey = 'created'
-
-    sortableSections.forEach((section) => {
-      originalItemsMap.set(section, Array.from(section.querySelectorAll<HTMLElement>('.post-item')))
-    })
-
-    const getKeyTime = (item: HTMLElement, key: PostSortKey) => {
-      const value = key === 'updated' ? item.dataset.updated : item.dataset.created
-      const time = Number(value)
-      return Number.isFinite(time) ? time : 0
-    }
-
-    const updateButtons = (filter: string) => {
-      buttons.forEach((button) => {
-        const isActive = button.dataset.filter === filter
-        button.classList.toggle('is-active', isActive)
-        button.setAttribute('aria-selected', isActive ? 'true' : 'false')
-
-        if (!isActive || !triggerLabel) {
-          return
-        }
-
-        const nextLabel = button.dataset.triggerLabel || button.textContent?.trim() || '全部分类'
-        if (triggerLabel.textContent !== nextLabel) {
-          triggerLabel.textContent = nextLabel
-          animateTextSwap(triggerLabel)
-        }
-      })
-    }
-
-    const syncSortLabel = () => {
-      if (!sortLabel) {
-        return
-      }
-
-      const nextLabel = currentSortKey === 'updated' ? '更新日期' : '创建日期'
-      if (sortLabel.textContent !== nextLabel) {
-        sortLabel.textContent = nextLabel
-        animateTextSwap(sortLabel)
-      }
-    }
-
-    const reorderBySortKey = () => {
-      const sectionOrderIndex = new Map(originalSectionOrder.map((section, index) => [section, index]))
-      const sectionEntries = sortableSections.map((section) => {
-        const list = section.querySelector<HTMLElement>('ul')
-        const itemsInSection = originalItemsMap.get(section) ?? []
-        const orderedItems = itemsInSection
-          .slice()
-          .sort((a, b) => getKeyTime(b, currentSortKey) - getKeyTime(a, currentSortKey))
-
-        orderedItems.forEach(item => list?.appendChild(item))
-
-        const visibleItems = orderedItems.filter(item => !item.classList.contains('is-hidden'))
-        const maxTime = visibleItems.length > 0
-          ? Math.max(...visibleItems.map(item => getKeyTime(item, currentSortKey)))
-          : -1
-
-        return {
-          section,
-          maxTime,
-          index: sectionOrderIndex.get(section) ?? 0,
-        }
-      })
-
-      sectionEntries
-        .sort((a, b) => (b.maxTime - a.maxTime) || (a.index - b.index))
-        .forEach(entry => root.appendChild(entry.section))
-    }
-
-    const updatePostState = (filter: string) => {
-      updateButtons(filter)
-      syncSortLabel()
-
-      items.forEach((item) => {
-        const categories = (item.dataset.categories || '').split(',').filter(Boolean)
-        const match = filter === 'all' || categories.some(category => activeFilterValues.includes(category))
-        item.classList.toggle('is-hidden', !match)
-        item.setAttribute('aria-hidden', match ? 'false' : 'true')
-      })
-
-      sections.forEach((section) => {
-        const visibleItems = section.querySelectorAll('.post-item:not(.is-hidden)')
-        section.classList.toggle('is-hidden', visibleItems.length === 0)
-      })
-
-      reorderBySortKey()
-    }
-
-    let activeFilterValues: string[] = []
-
-    const applyFilter = (filter: string, filterValues: string[] = [], animate: boolean = true) => {
-      const sync = () => updatePostState(filter)
-
-      activeFilterValues = filterValues
-
-      if (animate) {
-        runFlipTransition(root, ['.post-item', '.post-year-section'], sync)
-      }
-      else {
-        sync()
-      }
-
-      dropdown.close()
-    }
-
-    const applySort = (key: PostSortKey, animate: boolean = true) => {
-      const sync = () => {
-        currentSortKey = key
-        syncSortLabel()
-        reorderBySortKey()
-      }
-
-      if (animate) {
-        runFlipTransition(root, ['.post-item', '.post-year-section'], sync)
-      }
-      else {
-        sync()
-      }
-
-      dropdown.close()
-    }
-
-    const handleClick = (event: Event) => {
-      const target = event.target
-      if (!(target instanceof Element)) return
-
-      const button = target.closest<HTMLElement>('.post-filter-option[data-filter]')
-      if (button && root.contains(button)) {
-        const filterValues = (button.dataset.filterValues || '')
-          .split(',')
-          .map(value => value.trim())
-          .filter(Boolean)
-        applyFilter(button.dataset.filter || 'all', filterValues)
-        return
-      }
-
-      if (target.closest('[data-sort-button]')) {
-        const nextSortKey: PostSortKey = currentSortKey === 'created' ? 'updated' : 'created'
-        applySort(nextSortKey)
-      }
-    }
-
-    root.addEventListener('click', handleClick)
-    root.dataset.filterBound = '1'
-    root.__postFilterCleanup = () => {
-      root.removeEventListener('click', handleClick)
-      dropdown.destroy()
-      delete root.dataset.filterBound
-      delete root.__postFilterCleanup
-    }
-
-    const activeButton = root.querySelector<HTMLElement>('.post-filter-option.is-active[data-filter]')
-    const initialFilterValues = (activeButton?.dataset.filterValues || '')
-      .split(',')
-      .map(value => value.trim())
-      .filter(Boolean)
-    applyFilter(activeButton?.dataset.filter || 'all', initialFilterValues, false)
-  }
-
-  function cleanupPostFilters() {
-    document.querySelectorAll<PostFilterRoot>('[data-posts-root]').forEach(root => root.__postFilterCleanup?.())
-  }
-
-  document.addEventListener('astro:page-load', initPostFilters)
-  document.addEventListener('astro:before-swap', cleanupPostFilters)
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initPostFilters, { once: true })
-  }
-  else {
-    initPostFilters()
-  }
+  import '@/scripts/post-filters'
 </script>
 
 <style>
@@ -323,10 +128,15 @@ const visiblePostsByYear = new Map(
     --post-control-h: 1.85rem; /* 想更紧凑可改 1.75rem */
     --post-menu-open-duration: 180ms;
     --post-menu-close-duration: 140ms;
-    --post-layout-duration: 240ms;
+    --post-layout-duration: 280ms;
     --post-motion-easing: cubic-bezier(0.22, 1, 0.36, 1);
     --post-filter-col-w: 7.5rem;
     --post-sort-col-w: 6.25rem;
+  }
+
+  [data-posts-root][data-layout-animating='1'] .post-year-section,
+  [data-posts-root][data-layout-animating='1'] :global(.post-item) {
+    will-change: opacity, max-height, transform;
   }
 
   /* ===== 顶部筛选条 ===== */
@@ -573,13 +383,124 @@ const visiblePostsByYear = new Map(
 
   /* ===== 手机适配 ===== */
   @media (max-width: 768px) {
+    [data-posts-root] {
+      position: relative;
+    }
+
+    .post-filter {
+      position: absolute;
+      top: -7.35rem;
+      right: 0;
+      inline-size: min(13.5rem, calc(100vw - 9.25rem));
+      margin-bottom: 0;
+      z-index: 35;
+    }
+
     .post-filter-list {
-      grid-template-columns: var(--post-filter-col-w) var(--post-sort-col-w);
+      display: flex;
+      align-items: center;
+      flex-wrap: nowrap;
+      position: relative;
+      width: 100%;
+      justify-content: flex-end;
+      gap: 0.64rem;
+    }
+
+    .post-filter-dropdown {
+      position: relative;
+      flex: 1 1 auto;
+      min-width: 0;
+      inline-size: auto;
+    }
+
+    .post-filter-trigger,
+    .post-filter-plain {
+      height: auto;
+      padding: 0.08rem 0;
+      border: none;
+      border-radius: 0;
+      background: transparent;
+      gap: 0.12rem;
+      font-size: 0.94rem;
+      font-weight: 600;
+      line-height: 1;
+      color: oklch(var(--un-preset-theme-colors-secondary) / 0.74);
+    }
+
+    .post-filter-trigger {
+      justify-content: flex-start;
+      min-width: 0;
+    }
+
+    .post-filter-plain {
+      inline-size: auto;
+      flex: none;
+      min-inline-size: auto;
+      justify-content: center;
+    }
+
+    .post-filter-plain:active,
+    .post-filter-trigger:active {
+      transform: none;
+    }
+
+    .post-filter-icon,
+    .post-filter-icon svg {
+      width: 0.74rem;
+      height: 0.74rem;
+    }
+
+    .post-filter-label,
+    .post-sort-label {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-size: inherit;
+      letter-spacing: 0;
+    }
+
+    .post-filter-trigger .post-filter-icon,
+    .post-filter-plain .post-filter-icon {
+      margin-right: 0.02rem;
+    }
+
+    .post-filter-label {
+      flex: 1;
+    }
+
+    .post-filter-caret {
+      margin-left: 0.04rem;
+      opacity: 0.48;
+    }
+
+    .post-filter-plain:hover,
+    .post-filter-trigger:hover,
+    .post-filter-dropdown[data-open='1'] .post-filter-trigger {
+      color: oklch(var(--un-preset-theme-colors-primary) / 0.9);
+      background: transparent;
+      border-color: transparent;
     }
 
     .post-filter-menu {
-      inline-size: max(100%, 10rem);
-      max-height: 260px;
+      left: 0;
+      right: auto;
+      margin-top: 0.22rem;
+      inline-size: min(12.4rem, calc(100vw - 9.25rem));
+      min-width: 0;
+      max-width: none;
+      max-height: min(14.2rem, 44vh);
+      border-radius: 0.78rem;
+      padding: 0.18rem;
+      z-index: 90;
+      transform-origin: top left;
+      box-shadow: 0 10px 24px oklch(0 0 0 / 0.22);
+    }
+
+    .post-filter-option {
+      min-height: 1.95rem;
+      padding: 0.4rem 0.5rem;
+      font-size: 0.8rem;
+      line-height: 1.15;
+      border-radius: 0.58rem;
     }
   }
 

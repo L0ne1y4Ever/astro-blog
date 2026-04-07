@@ -1,7 +1,9 @@
 const MOTION_EASING = 'cubic-bezier(0.22, 1, 0.36, 1)'
-const MOTION_DURATION = 240
+const MOTION_DURATION = 280
+const ENTER_OFFSET_Y = 10
 
 const activeAnimations = new WeakMap<HTMLElement, Animation>()
+const layoutTransitionTokens = new WeakMap<HTMLElement, symbol>()
 
 function prefersReducedMotion() {
   return document.documentElement.classList.contains('reduce-motion')
@@ -56,6 +58,55 @@ function collectLayoutRects(root: ParentNode, selectors: string[]) {
   return rects
 }
 
+function supportsIndependentTranslate() {
+  return typeof CSS !== 'undefined'
+    && typeof CSS.supports === 'function'
+    && CSS.supports('translate', '0 0')
+}
+
+function markLayoutAnimating(root: HTMLElement, duration: number) {
+  const token = Symbol('layout-transition')
+  layoutTransitionTokens.set(root, token)
+  root.dataset.layoutAnimating = '1'
+
+  window.setTimeout(() => {
+    if (layoutTransitionTokens.get(root) !== token) {
+      return
+    }
+
+    delete root.dataset.layoutAnimating
+    layoutTransitionTokens.delete(root)
+  }, duration + 96)
+}
+
+function createMoveKeyframes(deltaX: number, deltaY: number): Keyframe[] {
+  if (supportsIndependentTranslate()) {
+    return [
+      { translate: `${deltaX}px ${deltaY}px` },
+      { translate: '0 0' },
+    ]
+  }
+
+  return [
+    { transform: `translate(${deltaX}px, ${deltaY}px)` },
+    { transform: 'translate(0, 0)' },
+  ]
+}
+
+function createEnterKeyframes(): Keyframe[] {
+  if (supportsIndependentTranslate()) {
+    return [
+      { opacity: 0, translate: `0 ${ENTER_OFFSET_Y}px` },
+      { opacity: 1, translate: '0 0' },
+    ]
+  }
+
+  return [
+    { opacity: 0, transform: `translate(0, ${ENTER_OFFSET_Y}px)` },
+    { opacity: 1, transform: 'translate(0, 0)' },
+  ]
+}
+
 export function runFlipTransition(
   root: HTMLElement,
   selectors: string[],
@@ -67,6 +118,7 @@ export function runFlipTransition(
     return
   }
 
+  markLayoutAnimating(root, duration)
   const firstRects = collectLayoutRects(root, selectors)
 
   updateDOM()
@@ -76,6 +128,16 @@ export function runFlipTransition(
   lastRects.forEach((lastRect, element) => {
     const firstRect = firstRects.get(element)
     if (!firstRect) {
+      const animation = element.animate(
+        createEnterKeyframes(),
+        {
+          duration: Math.round(duration * 0.82),
+          easing: MOTION_EASING,
+          fill: 'both',
+        },
+      )
+
+      trackAnimation(element, animation)
       return
     }
 
@@ -86,10 +148,7 @@ export function runFlipTransition(
     }
 
     const animation = element.animate(
-      [
-        { transform: `translate(${deltaX}px, ${deltaY}px)` },
-        { transform: 'translate(0, 0)' },
-      ],
+      createMoveKeyframes(deltaX, deltaY),
       {
         duration,
         easing: MOTION_EASING,
