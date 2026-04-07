@@ -171,9 +171,9 @@ const mobileDefaultLabel = mobileDefaultTab === 'toc' ? currentUI.toc : currentU
   }
 
   .toc-mobile-shell {
-    --toc-mobile-panel-width: min(15.7rem, calc(100vw - 2.6rem));
     --toc-mobile-inline-safe: max(0.75rem, calc(env(safe-area-inset-left) + 0.7rem));
     --toc-mobile-left: var(--toc-mobile-inline-safe);
+    --toc-mobile-panel-width: min(15.7rem, calc(100vw - 2.6rem));
     --toc-mobile-offset-bottom: calc(8.25rem + env(safe-area-inset-bottom));
     --toc-mobile-control-size: 2.56rem;
     --toc-mobile-panel-gap: 0.72rem;
@@ -202,10 +202,10 @@ const mobileDefaultLabel = mobileDefaultTab === 'toc' ? currentUI.toc : currentU
     backdrop-filter: blur(20px) saturate(165%);
     -webkit-backdrop-filter: blur(20px) saturate(165%);
     transition:
-      color 180ms ease,
-      border-color 180ms ease,
-      background-color 180ms ease,
-      transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+      color var(--motion-fast, 160ms) ease,
+      border-color var(--motion-fast, 160ms) ease,
+      background-color var(--motion-fast, 160ms) ease,
+      transform var(--motion-base, 220ms) var(--motion-ease-standard, cubic-bezier(0.22, 1, 0.36, 1));
     z-index: 48;
   }
 
@@ -233,7 +233,7 @@ const mobileDefaultLabel = mobileDefaultTab === 'toc' ? currentUI.toc : currentU
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
-    transition: opacity 180ms ease, visibility 0s linear 180ms;
+    transition: opacity var(--motion-fast, 160ms) ease, visibility 0s linear var(--motion-fast, 160ms);
     z-index: 44;
   }
 
@@ -260,11 +260,13 @@ const mobileDefaultLabel = mobileDefaultTab === 'toc' ? currentUI.toc : currentU
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
-    transform: translateY(0.65rem) scale(0.985);
+    overflow: hidden;
+    transform: translateX(calc(-100% - 1.15rem)) scale(0.985);
+    transform-origin: left center;
     transition:
-      opacity 200ms ease,
-      transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
-      visibility 0s linear 220ms;
+      opacity var(--motion-fast, 160ms) ease,
+      transform var(--motion-base, 220ms) var(--motion-ease-enter, cubic-bezier(0.16, 1, 0.3, 1)),
+      visibility 0s linear var(--motion-base, 220ms);
     z-index: 47;
   }
 
@@ -304,10 +306,10 @@ const mobileDefaultLabel = mobileDefaultTab === 'toc' ? currentUI.toc : currentU
     font-size: 0.76rem;
     font-weight: 560;
     transition:
-      color 160ms ease,
-      background-color 180ms ease,
-      box-shadow 180ms ease,
-      transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+      color var(--motion-fast, 160ms) ease,
+      background-color var(--motion-fast, 160ms) ease,
+      box-shadow var(--motion-fast, 160ms) ease,
+      transform var(--motion-base, 220ms) var(--motion-ease-standard, cubic-bezier(0.22, 1, 0.36, 1));
   }
 
   .toc-mobile-tab.is-active {
@@ -327,7 +329,7 @@ const mobileDefaultLabel = mobileDefaultTab === 'toc' ? currentUI.toc : currentU
     border-radius: 999px;
     background: transparent;
     color: oklch(var(--un-preset-theme-colors-secondary) / 0.7);
-    transition: color 160ms ease, background-color 160ms ease;
+    transition: color var(--motion-fast, 160ms) ease, background-color var(--motion-fast, 160ms) ease;
   }
 
   .toc-mobile-panel__viewport {
@@ -385,7 +387,7 @@ const mobileDefaultLabel = mobileDefaultTab === 'toc' ? currentUI.toc : currentU
     background: oklch(var(--un-preset-theme-colors-secondary) / 0.06);
     text-decoration: none;
     color: oklch(var(--un-preset-theme-colors-secondary) / 0.8);
-    transition: color 180ms ease, background-color 180ms ease;
+    transition: color var(--motion-fast, 160ms) ease, background-color var(--motion-fast, 160ms) ease;
   }
 
   .toc-mobile-series-link.is-current {
@@ -412,7 +414,7 @@ const mobileDefaultLabel = mobileDefaultTab === 'toc' ? currentUI.toc : currentU
   .toc-links-h3,
   .toc-links-h4 {
     --at-apply: 'text-balance text-sm font-normal no-underline';
-    transition: color 0.15s ease-out, font-weight 0.15s ease-out;
+    transition: color var(--motion-fast, 160ms) ease-out, font-weight var(--motion-fast, 160ms) ease-out;
   }
 
   .toc-mobile-tab-panel {
@@ -423,9 +425,9 @@ const mobileDefaultLabel = mobileDefaultTab === 'toc' ? currentUI.toc : currentU
     pointer-events: none;
     transform: translateY(0.55rem);
     transition:
-      opacity 180ms ease,
-      transform 260ms cubic-bezier(0.22, 1, 0.36, 1),
-      visibility 0s linear 260ms;
+      opacity var(--motion-fast, 160ms) ease,
+      transform var(--motion-slow, 300ms) var(--motion-ease-enter, cubic-bezier(0.16, 1, 0.3, 1)),
+      visibility 0s linear var(--motion-slow, 300ms);
   }
 
   [data-mobile-toc-shell][data-active-tab='toc'] [data-mobile-tab-panel='toc'],

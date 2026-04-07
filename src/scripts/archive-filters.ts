@@ -1,4 +1,4 @@
-import { animateTextSwap, createDropdownController, runFlipTransition } from '@/scripts/filter-interactions'
+import { animateExitTransition, animateTextSwap, clearTransitionState, createDropdownController, runFlipTransition } from '@/scripts/filter-interactions'
 
 type ArchiveSortKey = 'created' | 'updated'
 type ArchiveRoot = HTMLElement & {
@@ -21,6 +21,7 @@ function initArchiveInteractions() {
   const originalYearOrder = years.slice()
   const originalItemsMap = new Map<HTMLElement, HTMLElement[]>()
   let currentSortKey: ArchiveSortKey = 'created'
+  let transitionRequestId = 0
 
   years.forEach((year) => {
     originalItemsMap.set(year, Array.from(year.querySelectorAll<HTMLElement>('.archive-item')))
@@ -44,7 +45,7 @@ function initArchiveInteractions() {
         return
       }
 
-      const nextLabel = button.dataset.triggerLabel || button.textContent?.trim() || '全部分类'
+      const nextLabel = button.dataset.triggerLabel || button.textContent?.trim() || '分类'
       if (filterLabel.textContent !== nextLabel) {
         filterLabel.textContent = nextLabel
         animateTextSwap(filterLabel)
@@ -90,13 +91,41 @@ function initArchiveInteractions() {
 
   let activeFilterValues: string[] = []
 
+  const matchesFilter = (item: HTMLElement, filter: string, filterValues: string[]) => {
+    const categories = (item.dataset.categories || '').split(',').filter(Boolean)
+    return filter === 'all' || categories.some(category => filterValues.includes(category))
+  }
+
+  const clearExitState = () => {
+    clearTransitionState(items)
+    clearTransitionState(years)
+  }
+
+  const collectExitTargets = (filter: string, filterValues: string[]) => {
+    const nextVisibleItems = new Set(items.filter(item => matchesFilter(item, filter, filterValues)))
+    const exitingItems = items.filter(item => !item.classList.contains('is-hidden') && !nextVisibleItems.has(item))
+    const exitingYears = years.filter((year) => {
+      if (year.classList.contains('is-hidden')) {
+        return false
+      }
+
+      const visibleItemsInYear = Array.from(year.querySelectorAll<HTMLElement>('.archive-item:not(.is-hidden)'))
+      if (visibleItemsInYear.length === 0) {
+        return false
+      }
+
+      return visibleItemsInYear.every(item => !nextVisibleItems.has(item))
+    })
+
+    return [...exitingItems, ...exitingYears]
+  }
+
   const updateArchiveState = (filter: string) => {
     updateFilterButtons(filter)
     syncSortLabel()
 
     items.forEach((item) => {
-      const categories = (item.dataset.categories || '').split(',').filter(Boolean)
-      const match = filter === 'all' || categories.some(category => activeFilterValues.includes(category))
+      const match = matchesFilter(item, filter, activeFilterValues)
       item.classList.toggle('is-hidden', !match)
       item.setAttribute('aria-hidden', match ? 'false' : 'true')
     })
@@ -110,21 +139,33 @@ function initArchiveInteractions() {
     reorderBySortKey()
   }
 
-  const applyFilter = (filter: string, filterValues: string[] = [], animate: boolean = true) => {
+  const applyFilter = async (filter: string, filterValues: string[] = [], animate: boolean = true) => {
+    const requestId = ++transitionRequestId
     const sync = () => updateArchiveState(filter)
 
     activeFilterValues = filterValues
     dropdown.close()
+    clearExitState()
 
     if (animate) {
+      const exitTargets = collectExitTargets(filter, filterValues)
+      await animateExitTransition(exitTargets)
+      if (requestId !== transitionRequestId) {
+        return
+      }
+
+      clearExitState()
       runFlipTransition(root, ['.archive-item', '.archive-year'], sync)
     }
     else {
+      clearExitState()
       sync()
     }
   }
 
   const applySort = (key: ArchiveSortKey, animate: boolean = true) => {
+    transitionRequestId += 1
+    clearExitState()
     const sync = () => {
       currentSortKey = key
       syncSortLabel()
@@ -153,7 +194,7 @@ function initArchiveInteractions() {
         .split(',')
         .map(value => value.trim())
         .filter(Boolean)
-      applyFilter(filterButton.dataset.filter || 'all', filterValues)
+      void applyFilter(filterButton.dataset.filter || 'all', filterValues)
       return
     }
 
@@ -228,7 +269,7 @@ function initArchiveInteractions() {
     .split(',')
     .map(value => value.trim())
     .filter(Boolean)
-  applyFilter(activeButton?.dataset.filter || 'all', initialFilterValues, false)
+  void applyFilter(activeButton?.dataset.filter || 'all', initialFilterValues, false)
 }
 
 function cleanupArchiveInteractions() {

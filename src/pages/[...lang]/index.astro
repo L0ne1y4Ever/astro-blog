@@ -126,10 +126,10 @@ const visiblePostsByYear = new Map(
 <style>
   :root {
     --post-control-h: 1.85rem; /* 想更紧凑可改 1.75rem */
-    --post-menu-open-duration: 180ms;
-    --post-menu-close-duration: 140ms;
-    --post-layout-duration: 280ms;
-    --post-motion-easing: cubic-bezier(0.22, 1, 0.36, 1);
+    --post-menu-open-duration: var(--motion-fast);
+    --post-menu-close-duration: var(--motion-fast);
+    --post-layout-duration: var(--motion-slow);
+    --post-motion-easing: var(--motion-ease-standard);
     --post-filter-col-w: 7.5rem;
     --post-sort-col-w: 6.25rem;
   }
@@ -378,6 +378,18 @@ const visiblePostsByYear = new Map(
     margin-top: 0;
     margin-bottom: 0;
     transform: translateY(-0.4rem);
+    pointer-events: none;
+  }
+
+  :global(.post-item.is-exiting) {
+    opacity: 0;
+    transform: translateY(-0.24rem) scale(0.992);
+    pointer-events: none;
+  }
+
+  .post-year-section.is-exiting {
+    opacity: 0.22;
+    transform: translateY(-0.32rem);
     pointer-events: none;
   }
 

@@ -1,14 +1,12 @@
-const MOTION_EASING = 'cubic-bezier(0.22, 1, 0.36, 1)'
-const MOTION_DURATION = 280
+import { MOTION_EASING_STANDARD, getMotionDuration, prefersReducedMotion } from '@/scripts/motion'
+
+const MOTION_EASING = MOTION_EASING_STANDARD
+const MOTION_DURATION = getMotionDuration('slow')
 const ENTER_OFFSET_Y = 10
+const EXIT_DURATION = getMotionDuration('base')
 
 const activeAnimations = new WeakMap<HTMLElement, Animation>()
 const layoutTransitionTokens = new WeakMap<HTMLElement, symbol>()
-
-function prefersReducedMotion() {
-  return document.documentElement.classList.contains('reduce-motion')
-    || window.matchMedia('(prefers-reduced-motion: reduce)').matches
-}
 
 function cancelAnimation(element: HTMLElement) {
   const animation = activeAnimations.get(element)
@@ -180,6 +178,34 @@ export function animateTextSwap(element: HTMLElement | null) {
   )
 
   trackAnimation(element, animation)
+}
+
+export async function animateExitTransition(
+  elements: HTMLElement[],
+  className: string = 'is-exiting',
+  duration: number = EXIT_DURATION,
+) {
+  const targets = [...new Set(elements)]
+    .filter(element => element && element.isConnected)
+
+  if (targets.length === 0 || prefersReducedMotion()) {
+    return
+  }
+
+  targets.forEach((element) => {
+    cancelAnimation(element)
+    element.classList.add(className)
+  })
+
+  await new Promise<void>((resolve) => {
+    requestAnimationFrame(() => {
+      window.setTimeout(resolve, duration)
+    })
+  })
+}
+
+export function clearTransitionState(elements: HTMLElement[], className: string = 'is-exiting') {
+  elements.forEach(element => element.classList.remove(className))
 }
 
 interface DropdownController {

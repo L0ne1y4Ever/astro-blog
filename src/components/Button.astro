@@ -211,7 +211,9 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', han
     border: none;
     background: none;
     line-height: 1;
-    transition: color 160ms ease, transform 120ms ease;
+    transition:
+      color var(--motion-fast, 160ms) ease,
+      transform var(--motion-fast, 160ms) var(--motion-ease-standard, cubic-bezier(0.22, 1, 0.36, 1));
   }
 
   .floating-utility-button:hover {

@@ -272,7 +272,7 @@ const moreItems = [
     display: grid;
     grid-template-rows: 0fr;
     pointer-events: none;
-    transition: grid-template-rows 220ms var(--nav-motion-easing);
+    transition: grid-template-rows var(--motion-base, 220ms) var(--nav-motion-easing);
   }
 
   nav[data-nav-open='1'] .nav-more-panel {
@@ -286,8 +286,8 @@ const moreItems = [
     overflow: hidden;
     transform: translateY(-0.28em);
     transition:
-      opacity 180ms var(--nav-motion-easing),
-      transform 220ms var(--nav-motion-easing);
+      opacity var(--motion-fast, 160ms) var(--nav-motion-easing),
+      transform var(--motion-base, 220ms) var(--nav-motion-easing);
   }
 
   nav[data-nav-open='1'] .nav-more-panel > .nav-more-list {
@@ -299,14 +299,14 @@ const moreItems = [
     opacity: 0;
     transform: translateY(-0.24em);
     transition:
-      opacity 180ms var(--nav-motion-easing),
-      transform 220ms var(--nav-motion-easing);
+      opacity var(--motion-fast, 160ms) var(--nav-motion-easing),
+      transform var(--motion-base, 220ms) var(--nav-motion-easing);
   }
 
   nav[data-nav-open='1'] .nav-more-list li {
     opacity: 1;
     transform: translateY(0);
-    transition-delay: calc(var(--nav-item-index, 0) * 24ms + 20ms);
+    transition-delay: calc(var(--nav-item-index, 0) * 18ms + 12ms);
   }
 
   @media (prefers-reduced-motion: reduce) {

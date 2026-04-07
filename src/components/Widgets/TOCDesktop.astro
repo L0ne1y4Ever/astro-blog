@@ -172,7 +172,7 @@ const {
   .toc-links-h3,
   .toc-links-h4 {
     --at-apply: 'text-balance text-sm font-normal no-underline after:bottom-0.15em 2xl:(text-3.2 c-secondary/80 hover:c-primary hover:font-medium)';
-    transition: color 0.15s ease-out, font-weight 0.15s ease-out;
+    transition: color var(--motion-fast, 160ms) ease-out, font-weight var(--motion-fast, 160ms) ease-out;
   }
 
   #toc-toggle:checked ~ #toc-accordion-wrapper #toc-accordion-content {
@@ -235,7 +235,7 @@ const {
 
   .post-series-link {
     --at-apply: 'block no-underline c-secondary/82';
-    transition: color 0.18s ease;
+    transition: color var(--motion-fast, 160ms) ease;
   }
 
   .post-series-link:hover,
@@ -254,7 +254,7 @@ const {
 
   #toc-accordion-wrapper {
     --at-apply: 'grid rows-[0fr]';
-    transition: grid-template-rows 0.3s ease-in-out;
+    transition: grid-template-rows var(--motion-slow, 300ms) var(--motion-ease-enter, cubic-bezier(0.16, 1, 0.3, 1));
   }
 
   #toc-accordion-wrapper > *,
@@ -276,7 +276,7 @@ const {
 
   #series-accordion-wrapper {
     --at-apply: 'grid rows-[0fr]';
-    transition: grid-template-rows 0.3s ease-in-out;
+    transition: grid-template-rows var(--motion-slow, 300ms) var(--motion-ease-enter, cubic-bezier(0.16, 1, 0.3, 1));
   }
 
   #series-toggle:checked ~ #series-accordion-wrapper {

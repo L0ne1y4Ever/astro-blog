@@ -1,4 +1,4 @@
-import { animateTextSwap, createDropdownController, runFlipTransition } from '@/scripts/filter-interactions'
+import { animateExitTransition, animateTextSwap, clearTransitionState, createDropdownController, runFlipTransition } from '@/scripts/filter-interactions'
 
 type PostSortKey = 'created' | 'updated'
 type PostFilterRoot = HTMLElement & {
@@ -22,6 +22,7 @@ function initPostFilters() {
   const originalSectionOrder = sortableSections.slice()
   const originalItemsMap = new Map<HTMLElement, HTMLElement[]>()
   let currentSortKey: PostSortKey = 'created'
+  let transitionRequestId = 0
 
   sortableSections.forEach((section) => {
     originalItemsMap.set(section, Array.from(section.querySelectorAll<HTMLElement>('.post-item')))
@@ -63,6 +64,35 @@ function initPostFilters() {
     }
   }
 
+  const matchesFilter = (item: HTMLElement, filter: string, filterValues: string[]) => {
+    const categories = (item.dataset.categories || '').split(',').filter(Boolean)
+    return filter === 'all' || categories.some(category => filterValues.includes(category))
+  }
+
+  const clearExitState = () => {
+    clearTransitionState(items)
+    clearTransitionState(sections)
+  }
+
+  const collectExitTargets = (filter: string, filterValues: string[]) => {
+    const nextVisibleItems = new Set(items.filter(item => matchesFilter(item, filter, filterValues)))
+    const exitingItems = items.filter(item => !item.classList.contains('is-hidden') && !nextVisibleItems.has(item))
+    const exitingSections = sections.filter((section) => {
+      if (section.classList.contains('is-hidden')) {
+        return false
+      }
+
+      const visibleItemsInSection = Array.from(section.querySelectorAll<HTMLElement>('.post-item:not(.is-hidden)'))
+      if (visibleItemsInSection.length === 0) {
+        return false
+      }
+
+      return visibleItemsInSection.every(item => !nextVisibleItems.has(item))
+    })
+
+    return [...exitingItems, ...exitingSections]
+  }
+
   const reorderBySortKey = () => {
     const sectionOrderIndex = new Map(originalSectionOrder.map((section, index) => [section, index]))
     const sectionEntries = sortableSections.map((section) => {
@@ -96,8 +126,7 @@ function initPostFilters() {
     syncSortLabel()
 
     items.forEach((item) => {
-      const categories = (item.dataset.categories || '').split(',').filter(Boolean)
-      const match = filter === 'all' || categories.some(category => activeFilterValues.includes(category))
+      const match = matchesFilter(item, filter, activeFilterValues)
       item.classList.toggle('is-hidden', !match)
       item.setAttribute('aria-hidden', match ? 'false' : 'true')
     })
@@ -112,21 +141,33 @@ function initPostFilters() {
 
   let activeFilterValues: string[] = []
 
-  const applyFilter = (filter: string, filterValues: string[] = [], animate: boolean = true) => {
+  const applyFilter = async (filter: string, filterValues: string[] = [], animate: boolean = true) => {
+    const requestId = ++transitionRequestId
     const sync = () => updatePostState(filter)
 
     activeFilterValues = filterValues
     dropdown.close()
+    clearExitState()
 
     if (animate) {
+      const exitTargets = collectExitTargets(filter, filterValues)
+      await animateExitTransition(exitTargets)
+      if (requestId !== transitionRequestId) {
+        return
+      }
+
+      clearExitState()
       runFlipTransition(root, ['.post-item', '.post-year-section'], sync)
     }
     else {
+      clearExitState()
       sync()
     }
   }
 
   const applySort = (key: PostSortKey, animate: boolean = true) => {
+    transitionRequestId += 1
+    clearExitState()
     const sync = () => {
       currentSortKey = key
       syncSortLabel()
@@ -153,7 +194,7 @@ function initPostFilters() {
         .split(',')
         .map(value => value.trim())
         .filter(Boolean)
-      applyFilter(button.dataset.filter || 'all', filterValues)
+      void applyFilter(button.dataset.filter || 'all', filterValues)
       return
     }
 
@@ -177,7 +218,7 @@ function initPostFilters() {
     .split(',')
     .map(value => value.trim())
     .filter(Boolean)
-  applyFilter(activeButton?.dataset.filter || 'all', initialFilterValues, false)
+  void applyFilter(activeButton?.dataset.filter || 'all', initialFilterValues, false)
 }
 
 function cleanupPostFilters() {

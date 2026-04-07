@@ -202,8 +202,10 @@ const pagefindNotReady = currentUI.searchNotReady ?? '搜索索引未准备好�
         const innerContainer = modal.querySelector('#pagefind-modal')
         if (!dialog || !innerContainer) return
 
-        const maxHeightRatio = window.matchMedia('(max-width: 767px)').matches ? 0.9 : 0.8
-        const maxH = window.innerHeight * maxHeightRatio
+        const modalStyle = getComputedStyle(modal)
+        const paddingTop = Number.parseFloat(modalStyle.paddingTop) || 0
+        const paddingBottom = Number.parseFloat(modalStyle.paddingBottom) || 0
+        const maxH = Math.max(0, modal.clientHeight - paddingTop - paddingBottom)
         const targetH = Math.min(innerContainer.scrollHeight + 2, maxH)
         if (Math.abs(targetH - state.lastDialogHeight) < 1) return
 
@@ -329,7 +331,9 @@ const pagefindNotReady = currentUI.searchNotReady ?? '搜索索引未准备好�
      1. 全局遮罩与位置
      ======================================================== */
   .search-modal {
-    --search-modal-v-pad: clamp(0.75rem, 8vh, 15vh);
+    --search-modal-v-pad: clamp(1rem, 4.8vh, 3rem);
+    --search-modal-bottom-pad: max(0.875rem, calc(0.875rem + env(safe-area-inset-bottom)));
+    --search-modal-rest-shift: clamp(-1.4rem, -2.8vh, -0.8rem);
     --search-modal-bg: oklch(var(--un-preset-theme-colors-background) / 0.94);
     --search-modal-text: oklch(var(--un-preset-theme-colors-primary) / 0.96);
     --search-modal-muted: oklch(var(--un-preset-theme-colors-secondary) / 0.82);
@@ -345,11 +349,11 @@ const pagefindNotReady = currentUI.searchNotReady ?? '搜索索引未准备好�
     inset: 0;
     display: flex;
     justify-content: center;
-    align-items: flex-start;
-    padding: var(--search-modal-v-pad) 0.625rem calc(0.875rem + env(safe-area-inset-bottom));
+    align-items: center;
+    padding: var(--search-modal-v-pad) 0.625rem var(--search-modal-bottom-pad);
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.3s ease;
+    transition: opacity var(--motion-base, 220ms) var(--motion-ease-enter, cubic-bezier(0.16, 1, 0.3, 1));
     z-index: 9999;
   }
 
@@ -376,8 +380,8 @@ const pagefindNotReady = currentUI.searchNotReady ?? '搜索索引未准备好�
     position: absolute;
     inset: 0;
     background: var(--search-modal-backdrop);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(var(--motion-overlay-blur, 5px));
+    -webkit-backdrop-filter: blur(var(--motion-overlay-blur, 5px));
   }
 
   /* ========================================================
@@ -386,7 +390,7 @@ const pagefindNotReady = currentUI.searchNotReady ?? '搜索索引未准备好�
   .search-modal__dialog {
     position: relative;
     width: min(48rem, 100%);
-    max-height: calc(100dvh - var(--search-modal-v-pad) - 1.25rem);
+    max-height: calc(100dvh - var(--search-modal-v-pad) - var(--search-modal-bottom-pad));
     background: var(--search-modal-bg);
     border: 1px solid var(--search-modal-border);
     border-radius: 0.8rem;
@@ -402,15 +406,15 @@ const pagefindNotReady = currentUI.searchNotReady ?? '搜索索引未准备好�
     flex-direction: column;
     
     /* 高级阻尼动画曲线，带来 Apple 级别的丝滑回弹感 */
-    transform: translateY(-10px) scale(0.98);
-    transition: height 0.34s cubic-bezier(0.32, 0.72, 0, 1),
-                transform 0.3s cubic-bezier(0.32, 0.72, 0, 1),
-                box-shadow 0.2s ease;
+    transform: translateY(calc(var(--search-modal-rest-shift) - 8px)) scale(0.985);
+    transition: height var(--motion-slow, 300ms) var(--motion-ease-enter, cubic-bezier(0.16, 1, 0.3, 1)),
+                transform var(--motion-base, 220ms) var(--motion-ease-enter, cubic-bezier(0.16, 1, 0.3, 1)),
+                box-shadow var(--motion-fast, 160ms) ease;
     will-change: transform;
   }
 
   .search-modal[data-open='1'] .search-modal__dialog {
-    transform: translateY(0) scale(1); /* 打开时位移复原 */
+    transform: translateY(var(--search-modal-rest-shift)) scale(1); /* 打开时位移复原 */
     will-change: height, transform;
   }
 
@@ -551,12 +555,12 @@ const pagefindNotReady = currentUI.searchNotReady ?? '搜索索引未准备好�
     background: transparent !important; 
     margin-bottom: 0.2rem;
     
-    transition: background-color 150ms ease;
+    transition: background-color var(--motion-fast, 160ms) ease;
   }
 
   /* 仅对前几项做进场动画，平衡“动效质感”和滚动流畅度 */
-  .search-modal .pagefind.pagefind-modal .pagefind-ui .pagefind-ui__result:nth-child(-n+8) {
-    animation: fadeSlideUp 0.24s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  .search-modal .pagefind.pagefind-modal .pagefind-ui .pagefind-ui__result:nth-child(-n+4) {
+    animation: fadeSlideUp var(--motion-fast, 160ms) var(--motion-ease-enter, cubic-bezier(0.16, 1, 0.3, 1)) forwards;
   }
 
   .search-modal .pagefind.pagefind-modal .pagefind-ui .pagefind-ui__result:hover {
@@ -629,13 +633,15 @@ const pagefindNotReady = currentUI.searchNotReady ?? '搜索索引未准备好�
 
   @media (max-width: 767px) {
     .search-modal {
-      --search-modal-v-pad: max(0.5rem, env(safe-area-inset-top));
+      --search-modal-v-pad: max(0.85rem, calc(env(safe-area-inset-top) + 0.55rem));
+      --search-modal-bottom-pad: max(0.85rem, calc(env(safe-area-inset-bottom) + 0.85rem));
+      --search-modal-rest-shift: clamp(-0.9rem, -1.8vh, -0.35rem);
       padding-inline: 0.45rem;
     }
 
     .search-modal__dialog {
       border-radius: 0.7rem;
-      max-height: calc(100dvh - var(--search-modal-v-pad) - env(safe-area-inset-bottom) - 0.5rem);
+      max-height: calc(100dvh - var(--search-modal-v-pad) - var(--search-modal-bottom-pad));
     }
 
     .search-modal .pagefind.pagefind-modal .pagefind-ui .pagefind-ui__search-input,
