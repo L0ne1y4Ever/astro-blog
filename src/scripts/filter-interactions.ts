@@ -2,7 +2,6 @@ import { MOTION_EASING_STANDARD, getMotionDuration, prefersReducedMotion } from 
 
 const MOTION_EASING = MOTION_EASING_STANDARD
 const MOTION_DURATION = getMotionDuration('slow')
-const EXIT_DURATION = getMotionDuration('slow')
 const ENTER_OFFSET_Y = 10
 
 const activeAnimations = new WeakMap<HTMLElement, Animation>()
@@ -183,7 +182,6 @@ export function animateTextSwap(element: HTMLElement | null) {
 export async function animateExitTransition(
   elements: HTMLElement[],
   className: string = 'is-exiting',
-  duration: number = EXIT_DURATION,
 ) {
   const targets = [...new Set(elements)]
     .filter(element => element && element.isConnected)
@@ -198,9 +196,7 @@ export async function animateExitTransition(
   })
 
   await new Promise<void>((resolve) => {
-    requestAnimationFrame(() => {
-      window.setTimeout(resolve, duration)
-    })
+    requestAnimationFrame(() => resolve())
   })
 }
 
