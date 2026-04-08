@@ -164,7 +164,7 @@ const mobileDefaultLabel = mobileDefaultTab === 'toc' ? currentUI.toc : currentU
 </div>
 
 <style>
-  @media (min-width: 769px) {
+  @media (min-width: 769px) and (hover: hover) and (pointer: fine) {
     .toc-mobile-shell {
       display: none;
     }
@@ -454,6 +454,17 @@ const mobileDefaultLabel = mobileDefaultTab === 'toc' ? currentUI.toc : currentU
     transition-delay: 0s;
   }
 
+  @media (min-width: 769px) and (hover: none) and (pointer: coarse) {
+    .toc-mobile-shell {
+      --toc-mobile-panel-width: min(18rem, calc(100vw - 3rem));
+      --toc-mobile-offset-bottom: calc(1.5rem + env(safe-area-inset-bottom));
+    }
+
+    .toc-mobile-panel {
+      max-height: min(54vh, 24rem);
+    }
+  }
+
   @media (max-width: 768px) {
     .toc-mobile-shell {
       --toc-mobile-panel-width: min(15.7rem, calc(100vw - 2.6rem));
@@ -489,7 +500,7 @@ type MobileTocShell = HTMLElement & {
   __mobileTocCleanup?: () => void
 }
 
-const isMobileViewport = window.matchMedia('(max-width: 768px)')
+const isMobileViewport = window.matchMedia('(max-width: 768px), (min-width: 769px) and (hover: none) and (pointer: coarse)')
 
 function initMobileTocPanels() {
   const shell = document.querySelector<MobileTocShell>('[data-mobile-toc-shell]')
