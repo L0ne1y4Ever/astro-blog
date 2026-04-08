@@ -59,8 +59,7 @@ const uptimeDays = Math.floor((now.getTime() - startDate.getTime()) / (1000 * 60
 ---
 
 <footer
-  class="text-3 leading-1.25em font-navbar"
-  lg="uno-desktop-column bottom-20 text-3.5"
+  class="site-footer text-3 leading-1.25em font-navbar md:text-3.5"
 >
   <p>
     {socialLinks.map((link, index) => (
@@ -169,3 +168,14 @@ const uptimeDays = Math.floor((now.getTime() - startDate.getTime()) / (1000 * 60
     document.documentElement.dataset.footerUptimeTimer = '1'
   }
 </script>
+
+<style>
+  @media (min-width: 1024px) {
+    .site-footer {
+      position: fixed;
+      right: max(5rem, calc(50vw - 35rem));
+      bottom: 5rem;
+      width: 14rem;
+    }
+  }
+</style>

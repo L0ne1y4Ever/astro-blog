@@ -73,9 +73,8 @@ const moreItems = [
   aria-label="Site Navigation"
   data-nav-open={isMoreActive ? '1' : '0'}
   class:list={[
-    'mb-10.5 text-3.6 font-semibold leading-2.45em font-navbar',
-    'lg:(uno-desktop-column text-4 bottom-[min(9.04rem+3.85vw,12.5rem)]) cjk:tracking-wide',
-    isPost ? 'hidden lg:block' : '',
+    'site-nav mb-10.5 text-3.6 font-semibold leading-2.45em font-navbar md:text-4 cjk:tracking-wide',
+    isPost ? 'site-nav--post' : '',
   ]}
 >
   <ul class="nav-list">
@@ -185,14 +184,22 @@ const moreItems = [
       })
     }
 
-    document.addEventListener('astro:page-load', initNavMoreToggle)
-    document.addEventListener('astro:before-swap', cleanupNavMoreToggle)
+    const navLifecycleState = globalThis.__navMoreLifecycleState || { bound: false }
+
+    if (!navLifecycleState.bound) {
+      document.addEventListener('astro:page-load', initNavMoreToggle)
+      document.addEventListener('astro:before-swap', cleanupNavMoreToggle)
+      navLifecycleState.bound = true
+    }
+
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', initNavMoreToggle, { once: true })
     }
     else {
       initNavMoreToggle()
     }
+
+    globalThis.__navMoreLifecycleState = navLifecycleState
   })()
 </script>
 
@@ -207,10 +214,34 @@ const moreItems = [
     padding: 0;
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     nav[aria-label='Site Navigation'] {
       position: relative;
       block-size: 9.65rem;
+      inline-size: fit-content;
+      max-width: 100%;
+    }
+
+    .nav-list {
+      width: max-content;
+      max-width: 100%;
+    }
+  }
+
+  .site-nav--post {
+    display: none;
+  }
+
+  @media (min-width: 1024px) {
+    .site-nav {
+      position: fixed;
+      right: max(5rem, calc(50vw - 35rem));
+      bottom: min(9.04rem + 3.85vw, 12.5rem);
+      width: 14rem;
+    }
+
+    .site-nav--post {
+      display: block;
     }
   }
 

@@ -35,6 +35,13 @@ export default defineConfig({
     }) as Preset<object>,
   ],
   theme: {
+    breakpoints: {
+      sm: '640px',
+      md: '768px',
+      lg: '769px',
+      xl: '1280px',
+      '2xl': '1536px',
+    },
     colors: {
       ...light,
       note: 'oklch(48.8% 0.243 264.376 / 0.8)', // blue-700

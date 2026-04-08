@@ -16,7 +16,7 @@ const SubtitleTag = isPost ? 'div' : 'h2'
 
 <header
   class:list={[
-    'lg:(uno-desktop-column top-20) cjk:tracking-wide',
+    'site-header cjk:tracking-wide',
     isPost
     ? 'mb-6.6 lg:mb-10.8'
     : 'mb-10.5',
@@ -26,8 +26,8 @@ const SubtitleTag = isPost ? 'div' : 'h2'
     class:list={[
       'font-bold font-title',
       isPost
-        ? `mb-1.5 mt-1.2 text-5.375 c-secondary lg:(mb-1.8 mt-0 text-9 c-primary)`
-        : `mb-1.8 w-75% text-8 c-primary lg:(w-full text-9)`,
+        ? `mb-1.5 mt-1.2 text-5.375 c-secondary md:(mb-1.8 mt-0 text-9 c-primary)`
+        : `mb-1.8 w-75% text-8 c-primary md:(w-full text-9)`,
     ]}
   >
     <!-- Fix text cropping issues during view transition on iOS by adding a div tag -->
@@ -48,10 +48,10 @@ const SubtitleTag = isPost ? 'div' : 'h2'
   {headerSubtitle && (
     <SubtitleTag
       class:list={[
-        'text-3.5 c-secondary font-navbar lg:text-4',
+        'text-3.5 c-secondary font-navbar md:text-4',
         isPost
-        ? 'hidden lg:block'
-        : 'w-75% lg:w-full',
+        ? 'hidden md:block'
+        : 'w-75% md:w-full',
       ]}
       aria-hidden={isPost}
     >
@@ -59,3 +59,14 @@ const SubtitleTag = isPost ? 'div' : 'h2'
     </SubtitleTag>
   )}
 </header>
+
+<style>
+  @media (min-width: 1024px) {
+    .site-header {
+      position: fixed;
+      right: max(5rem, calc(50vw - 35rem));
+      top: 5rem;
+      width: 14rem;
+    }
+  }
+</style>

@@ -52,15 +52,13 @@ const MarginBottom = isPost && themeConfig.comment.enabled
   <Head {postTitle} {postDescription} {postSlug} />
   <body data-pagefind-ignore={isPost ? undefined : 'all'}>
     <div
-      class="group mx-auto max-w-205.848 min-h-vh w-full min-h-dvh"
-      p="x-[min(6vw,1.35rem)] y-7"
-      lg="mx-[max(5.75rem,calc(50vw-34.25rem))] my-20 max-w-[min(calc(75vw-16rem),44rem)] min-h-full p-0"
-      >
+      class="site-shell group mx-auto max-w-205.848 min-h-vh w-full min-h-dvh"
+    >
       <Header />
       <Navbar />
       <!-- 图像 -->
       <div
-        class="hidden lg:block fixed top-14 z--1 pointer-events-none"
+        class="site-shell__decor hidden fixed top-14 z--1 pointer-events-none"
         style="
           --side-gap: 2rem;
           left: calc(50% + min(calc(37.5vw - 8rem), 22rem) + var(--side-gap));
@@ -100,3 +98,33 @@ const MarginBottom = isPost && themeConfig.comment.enabled
     <SearchModal autoOpen={isSearch} />
   </body>
 </html>
+
+<style>
+  .site-shell {
+    padding: 1.75rem min(6vw, 1.35rem);
+  }
+
+  .site-shell__decor {
+    display: none;
+  }
+
+  @media (min-width: 768px) and (max-width: 1023px) {
+    .site-shell {
+      max-width: min(100%, 52rem);
+      padding: 2rem clamp(1.35rem, 4vw, 1.85rem);
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .site-shell {
+      margin: 5rem max(5.75rem, calc(50vw - 34.25rem));
+      max-width: min(calc(75vw - 16rem), 44rem);
+      min-height: 100%;
+      padding: 0;
+    }
+
+    .site-shell__decor {
+      display: block;
+    }
+  }
+</style>

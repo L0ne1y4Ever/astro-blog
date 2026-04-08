@@ -368,8 +368,7 @@ const visiblePostsByYear = new Map(
     transition:
       opacity var(--post-layout-duration) var(--post-motion-easing),
       max-height var(--post-layout-duration) var(--post-motion-easing),
-      transform var(--post-layout-duration) var(--post-motion-easing),
-      margin var(--post-layout-duration) var(--post-motion-easing);
+      transform var(--post-layout-duration) var(--post-motion-easing);
   }
 
   :global(.post-item.is-hidden) {
@@ -383,7 +382,7 @@ const visiblePostsByYear = new Map(
 
   :global(.post-item.is-exiting) {
     opacity: 0;
-    transform: translateY(-0.24rem) scale(0.992);
+    transform: translateY(-0.24rem);
     pointer-events: none;
   }
 
@@ -394,7 +393,7 @@ const visiblePostsByYear = new Map(
   }
 
   /* ===== 手机适配 ===== */
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     [data-posts-root] {
       position: relative;
     }
