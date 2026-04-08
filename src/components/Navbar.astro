@@ -232,6 +232,19 @@ const moreItems = [
     display: none;
   }
 
+  @media (min-width: 768px) and (max-width: 1023px) {
+    .site-nav {
+      position: fixed;
+      right: max(1.5rem, calc(env(safe-area-inset-right) + 1.5rem));
+      top: 11rem;
+      width: 12.5rem;
+    }
+
+    .site-nav--post {
+      display: block;
+    }
+  }
+
   @media (min-width: 1024px) {
     .site-nav {
       position: fixed;

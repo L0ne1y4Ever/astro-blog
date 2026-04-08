@@ -154,6 +154,7 @@ function initArchiveInteractions() {
         return
       }
 
+      clearExitState()
       runFlipTransition(root, ['.archive-item', '.archive-year'], sync)
     }
     else {

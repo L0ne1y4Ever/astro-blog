@@ -110,8 +110,11 @@ const MarginBottom = isPost && themeConfig.comment.enabled
 
   @media (min-width: 768px) and (max-width: 1023px) {
     .site-shell {
-      max-width: min(100%, 52rem);
-      padding: 2rem clamp(1.35rem, 4vw, 1.85rem);
+      width: min(34rem, calc(100vw - 16rem));
+      max-width: none;
+      margin-left: clamp(1.35rem, 4vw, 1.85rem);
+      margin-right: auto;
+      padding: 2rem 0;
     }
   }
 
