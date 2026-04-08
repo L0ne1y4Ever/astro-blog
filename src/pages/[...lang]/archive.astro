@@ -577,7 +577,8 @@ function getAgeForYear(year: number) {
       transform var(--archive-layout-duration) var(--archive-motion-easing),
       opacity var(--archive-layout-duration) var(--archive-motion-easing),
       max-height var(--archive-layout-duration) var(--archive-motion-easing),
-      padding var(--archive-layout-duration) var(--archive-motion-easing);
+      padding var(--archive-layout-duration) var(--archive-motion-easing),
+      margin var(--archive-layout-duration) var(--archive-motion-easing);
   }
 
   .archive-item + .archive-item {
@@ -593,7 +594,7 @@ function getAgeForYear(year: number) {
 
   .archive-item.is-exiting {
     opacity: 0;
-    transform: translateY(-0.24rem);
+    transform: translateY(-0.24rem) scale(0.992);
     pointer-events: none;
   }
 
@@ -682,7 +683,7 @@ function getAgeForYear(year: number) {
   }
 
   /* ===== 手机适配 ===== */
-  @media (max-width: 767px) {
+  @media (max-width: 768px) {
     .archive-toolbar {
       flex-direction: row;
       align-items: center;

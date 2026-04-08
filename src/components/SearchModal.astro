@@ -69,7 +69,7 @@ const pagefindNotReady = currentUI.searchNotReady ?? '搜索索引未准备好�
   type="module"
   is:inline
   data-astro-rerun
-  define:vars={{ pagefindBase, pagefindTranslations, isProd }}
+  define:vars={{ pagefindBase, pagefindTranslations, pagefindNotReady, isProd }}
 >
   (function () {
     const modal = document.querySelector('[data-search-modal]')
@@ -83,8 +83,6 @@ const pagefindNotReady = currentUI.searchNotReady ?? '搜索索引未准备好�
       pagefindLoading: null,
       resizeObserver: null,
       pendingResizeFrame: null,
-      closeHeightFrame: null,
-      closeResetTimer: null,
       lastDialogHeight: 0,
       pagefindBase,
       pagefindTranslations,
@@ -102,10 +100,6 @@ const pagefindNotReady = currentUI.searchNotReady ?? '搜索索引未准备好�
       handleSearchIntent: null,
       syncDialogHeight: null,
       scheduleDialogResize: null,
-      getCollapsedDialogHeight: null,
-      cancelPendingClose: null,
-      getFocusableElements: null,
-      handleBeforeSwap: null,
     }
 
     const previousModal = state.modal
@@ -227,57 +221,11 @@ const pagefindNotReady = currentUI.searchNotReady ?? '搜索索引未准备好�
         })
       }
 
-      state.getCollapsedDialogHeight = () => {
-        const modal = getModal()
-        if (!modal) return 0
-        const input =
-          modal.querySelector('.pagefind-ui__search-input') ||
-          modal.querySelector('.pagefind-fallback-input')
-        if (input instanceof HTMLElement) {
-          return Math.ceil(input.getBoundingClientRect().height)
-        }
-
-        return window.matchMedia('(max-width: 767px)').matches ? 54 : 61
-      }
-
-      state.cancelPendingClose = () => {
-        const modal = getModal()
-        if (!modal) return
-
-        if (state.closeHeightFrame !== null) {
-          cancelAnimationFrame(state.closeHeightFrame)
-          state.closeHeightFrame = null
-        }
-
-        if (state.closeResetTimer !== null) {
-          clearTimeout(state.closeResetTimer)
-          state.closeResetTimer = null
-        }
-
-        delete modal.dataset.closing
-      }
-
-      state.getFocusableElements = () => {
-        const modal = getModal()
-        if (!modal) return []
-
-        return Array.from(
-          modal.querySelectorAll(
-            'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
-          ),
-        ).filter((element) => {
-          if (!(element instanceof HTMLElement)) return false
-          if (element.closest('[aria-hidden="true"]')) return false
-          return element.offsetParent !== null || element === document.activeElement
-        })
-      }
-
       state.openModal = async () => {
         const modal = getModal()
         if (!modal) return
-        if (modal.dataset.open === '1' && modal.dataset.closing !== '1') return
+        if (modal.dataset.open === '1') return
         state.lastActive = document.activeElement
-        state.cancelPendingClose()
 
         state.setOpen(true)
 
@@ -307,17 +255,9 @@ const pagefindNotReady = currentUI.searchNotReady ?? '搜索索引未准备好�
         const modal = getModal()
         if (!modal) return
         if (modal.dataset.open !== '1') return
-        const dialog = modal.querySelector('.search-modal__dialog')
-        const currentHeight = dialog instanceof HTMLElement
-          ? Math.max(Math.ceil(dialog.getBoundingClientRect().height), state.lastDialogHeight)
-          : 0
-        const collapsedHeight = state.getCollapsedDialogHeight()
+        state.setOpen(false)
 
-        if (dialog instanceof HTMLElement && currentHeight > 0) {
-          dialog.style.height = `${currentHeight}px`
-          state.lastDialogHeight = currentHeight
-        }
-
+        // 关闭时断开监听，并重置高度为初始状态 (单行搜索框的高度)
         if (state.resizeObserver) {
           state.resizeObserver.disconnect()
           state.resizeObserver = null
@@ -326,30 +266,13 @@ const pagefindNotReady = currentUI.searchNotReady ?? '搜索索引未准备好�
           cancelAnimationFrame(state.pendingResizeFrame)
           state.pendingResizeFrame = null
         }
+        const dialog = modal.querySelector('.search-modal__dialog')
+        if (dialog) dialog.style.height = ''
+        state.lastDialogHeight = 0
 
-        modal.dataset.closing = '1'
-        state.setOpen(false)
-
-        state.closeHeightFrame = requestAnimationFrame(() => {
-          state.closeHeightFrame = null
-          if (dialog instanceof HTMLElement && collapsedHeight > 0) {
-            dialog.style.height = `${collapsedHeight}px`
-          }
-        })
-
-        const closeDuration = window.matchMedia('(max-width: 767px)').matches ? 380 : 360
-        state.closeResetTimer = window.setTimeout(() => {
-          state.closeResetTimer = null
-          delete modal.dataset.closing
-          if (dialog instanceof HTMLElement) {
-            dialog.style.height = ''
-          }
-          state.lastDialogHeight = 0
-
-          if (state.lastActive && typeof state.lastActive.focus === 'function') {
-            state.lastActive.focus()
-          }
-        }, closeDuration + 32)
+        if (state.lastActive && typeof state.lastActive.focus === 'function') {
+          state.lastActive.focus()
+        }
       }
 
       state.handleClick = (event) => {
@@ -369,36 +292,7 @@ const pagefindNotReady = currentUI.searchNotReady ?? '搜索索引未准备好�
       }
 
       state.handleKeydown = (event) => {
-        const modal = getModal()
-        if (!modal || modal.dataset.open !== '1') return
-
-        if (event.key === 'Escape') {
-          state.closeModal()
-          return
-        }
-
-        if (event.key !== 'Tab') return
-
-        const focusableElements = state.getFocusableElements()
-        if (focusableElements.length === 0) {
-          event.preventDefault()
-          return
-        }
-
-        const firstElement = focusableElements[0]
-        const lastElement = focusableElements[focusableElements.length - 1]
-        const activeElement = document.activeElement
-
-        if (event.shiftKey && activeElement === firstElement) {
-          event.preventDefault()
-          lastElement.focus()
-          return
-        }
-
-        if (!event.shiftKey && activeElement === lastElement) {
-          event.preventDefault()
-          firstElement.focus()
-        }
+        if (event.key === 'Escape') state.closeModal()
       }
 
       state.handleSearchOpen = () => void state.openModal()
@@ -412,41 +306,11 @@ const pagefindNotReady = currentUI.searchNotReady ?? '搜索索引未准备好�
         void state.ensurePagefind()
       }
 
-      state.handleBeforeSwap = () => {
-        state.cancelPendingClose()
-
-        if (state.resizeObserver) {
-          state.resizeObserver.disconnect()
-          state.resizeObserver = null
-        }
-
-        if (state.pendingResizeFrame !== null) {
-          cancelAnimationFrame(state.pendingResizeFrame)
-          state.pendingResizeFrame = null
-        }
-
-        const modal = getModal()
-        const dialog = modal?.querySelector('.search-modal__dialog')
-        if (dialog instanceof HTMLElement) {
-          dialog.style.height = ''
-        }
-
-        if (modal) {
-          modal.dataset.open = '0'
-          modal.setAttribute('aria-hidden', 'true')
-          delete modal.dataset.closing
-        }
-
-        document.documentElement.classList.remove('search-modal-open')
-        state.lastDialogHeight = 0
-      }
-
       document.addEventListener('click', state.handleClick)
       document.addEventListener('keydown', state.handleKeydown)
       document.addEventListener('search-modal-open', state.handleSearchOpen)
       document.addEventListener('pointerover', state.handleSearchIntent, { passive: true })
       document.addEventListener('focusin', state.handleSearchIntent)
-      document.addEventListener('astro:before-swap', state.handleBeforeSwap)
       window.addEventListener('resize', state.scheduleDialogResize, { passive: true })
 
       state.bound = true
@@ -470,9 +334,6 @@ const pagefindNotReady = currentUI.searchNotReady ?? '搜索索引未准备好�
     --search-modal-v-pad: clamp(1rem, 4.8vh, 3rem);
     --search-modal-bottom-pad: max(0.875rem, calc(0.875rem + env(safe-area-inset-bottom)));
     --search-modal-rest-shift: clamp(-1.4rem, -2.8vh, -0.8rem);
-    --search-modal-open-duration: var(--motion-slow, 300ms);
-    --search-modal-close-duration: 360ms;
-    --search-modal-close-duration-mobile: 380ms;
     --search-modal-bg: oklch(var(--un-preset-theme-colors-background) / 0.94);
     --search-modal-text: oklch(var(--un-preset-theme-colors-primary) / 0.96);
     --search-modal-muted: oklch(var(--un-preset-theme-colors-secondary) / 0.82);
@@ -546,7 +407,7 @@ const pagefindNotReady = currentUI.searchNotReady ?? '搜索索引未准备好�
     
     /* 高级阻尼动画曲线，带来 Apple 级别的丝滑回弹感 */
     transform: translateY(calc(var(--search-modal-rest-shift) - 8px)) scale(0.985);
-    transition: height var(--search-modal-open-duration) var(--motion-ease-enter, cubic-bezier(0.16, 1, 0.3, 1)),
+    transition: height var(--motion-slow, 300ms) var(--motion-ease-enter, cubic-bezier(0.16, 1, 0.3, 1)),
                 transform var(--motion-base, 220ms) var(--motion-ease-enter, cubic-bezier(0.16, 1, 0.3, 1)),
                 box-shadow var(--motion-fast, 160ms) ease;
     will-change: transform;
@@ -555,18 +416,6 @@ const pagefindNotReady = currentUI.searchNotReady ?? '搜索索引未准备好�
   .search-modal[data-open='1'] .search-modal__dialog {
     transform: translateY(var(--search-modal-rest-shift)) scale(1); /* 打开时位移复原 */
     will-change: height, transform;
-  }
-
-  .search-modal[data-closing='1'] {
-    transition-duration: var(--search-modal-close-duration);
-    transition-timing-function: var(--motion-ease-standard, cubic-bezier(0.22, 1, 0.36, 1));
-  }
-
-  .search-modal[data-closing='1'] .search-modal__dialog {
-    transition:
-      height var(--search-modal-close-duration) var(--motion-ease-standard, cubic-bezier(0.22, 1, 0.36, 1)),
-      transform 320ms var(--motion-ease-standard, cubic-bezier(0.22, 1, 0.36, 1)),
-      box-shadow var(--motion-fast, 160ms) ease;
   }
 
   .search-modal__dialog:focus-within {
@@ -774,18 +623,6 @@ const pagefindNotReady = currentUI.searchNotReady ?? '搜索索引未准备好�
     overflow: hidden;
   }
 
-  @media (prefers-reduced-motion: reduce) {
-    .search-modal,
-    .search-modal__dialog {
-      transition: none;
-    }
-
-    .search-modal .pagefind.pagefind-modal .pagefind-ui .pagefind-ui__result {
-      animation: none;
-    }
-  }
-
-  :global(html.reduce-motion) .search-modal,
   :global(html.reduce-motion) .search-modal__dialog {
     transition: none;
   }
@@ -799,7 +636,6 @@ const pagefindNotReady = currentUI.searchNotReady ?? '搜索索引未准备好�
       --search-modal-v-pad: max(0.85rem, calc(env(safe-area-inset-top) + 0.55rem));
       --search-modal-bottom-pad: max(0.85rem, calc(env(safe-area-inset-bottom) + 0.85rem));
       --search-modal-rest-shift: clamp(-0.9rem, -1.8vh, -0.35rem);
-      --search-modal-close-duration: var(--search-modal-close-duration-mobile);
       padding-inline: 0.45rem;
     }
 

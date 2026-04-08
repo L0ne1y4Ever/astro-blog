@@ -156,6 +156,7 @@ function initPostFilters() {
         return
       }
 
+      clearExitState()
       runFlipTransition(root, ['.post-item', '.post-year-section'], sync)
     }
     else {

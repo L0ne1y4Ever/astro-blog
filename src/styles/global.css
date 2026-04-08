@@ -4,16 +4,6 @@
 :root {
   --font-sans: "Inter Variable","Noto Sans SC Variable",system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Helvetica Neue",Arial,sans-serif;
   --font-mono: "JetBrains Mono Variable",ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
-  --un-preset-theme-colors-note: 48.8% 0.243 264.376;
-  --un-preset-theme-colors-note--alpha: 0.8;
-  --un-preset-theme-colors-tip: 50.8% 0.118 165.612;
-  --un-preset-theme-colors-tip--alpha: 0.8;
-  --un-preset-theme-colors-important: 49.6% 0.265 301.924;
-  --un-preset-theme-colors-important--alpha: 0.8;
-  --un-preset-theme-colors-warning: 55.5% 0.163 48.998;
-  --un-preset-theme-colors-warning--alpha: 0.8;
-  --un-preset-theme-colors-caution: 50.5% 0.213 27.518;
-  --un-preset-theme-colors-caution--alpha: 0.8;
 }
 
 html, body {
@@ -57,19 +47,6 @@ html {
   scrollbar-color: oklch(var(--un-preset-theme-colors-secondary) / 0.25) transparent;
   scrollbar-gutter: stable;
   text-autospace: normal;
-}
-
-html.dark {
-  --un-preset-theme-colors-note: 70.7% 0.165 254.624;
-  --un-preset-theme-colors-note--alpha: 0.8;
-  --un-preset-theme-colors-tip: 76.5% 0.177 163.223;
-  --un-preset-theme-colors-tip--alpha: 0.8;
-  --un-preset-theme-colors-important: 71.4% 0.203 305.504;
-  --un-preset-theme-colors-important--alpha: 0.8;
-  --un-preset-theme-colors-warning: 82.8% 0.189 84.429;
-  --un-preset-theme-colors-warning--alpha: 0.8;
-  --un-preset-theme-colors-caution: 70.4% 0.191 22.216;
-  --un-preset-theme-colors-caution--alpha: 0.8;
 }
 
 /* Fix Flash Issue On iOS */

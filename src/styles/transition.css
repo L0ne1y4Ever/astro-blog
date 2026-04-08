@@ -10,7 +10,7 @@
   --motion-overlay-blur: 5px;
 }
 
-@media (max-width: 767px) {
+@media (max-width: 768px) {
   :root {
     --motion-fast: 140ms;
     --motion-base: 180ms;
@@ -72,7 +72,7 @@ html[data-theme-changing] [data-disable-theme-toggle-transition] {
   }
 }
 
-@media (min-width: 768px) {
+@media (min-width: 1024px) {
   #post-date {
     opacity: 0;
     animation: fadeInUp 0.5s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
@@ -167,7 +167,7 @@ html[data-theme-changing] [data-disable-theme-toggle-transition] {
   }
 }
 
-@media (min-width: 768px) {
+@media (min-width: 1024px) {
   #back-button {
     opacity: 0;
     animation: fadeInLeft 0.5s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;

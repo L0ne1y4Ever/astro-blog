@@ -45,7 +45,7 @@ type NavigatorConnection = {
 }
 
 function isMobileDevice(): boolean {
-  return window.matchMedia('(max-width: 767px)').matches
+  return window.matchMedia('(max-width: 1023px)').matches
 }
 
 function getBasePath(): string {
@@ -67,7 +67,7 @@ class SoundEffectManager {
   constructor() {
     const connection = (navigator as Navigator & { connection?: NavigatorConnection }).connection
     const saveDataEnabled = Boolean(connection?.saveData)
-    const slowConnection = typeof connection?.effectiveType === 'string' && /(?:^|-)2g$/.test(connection.effectiveType)
+    const slowConnection = typeof connection?.effectiveType === 'string' && /(^|-)2g$/.test(connection.effectiveType)
     this.shouldPreload = !isMobileDevice() && !saveDataEnabled && !slowConnection
   }
 
@@ -148,15 +148,7 @@ class SoundEffectManager {
   }
 }
 
-type SoundEffectState = { bound: boolean }
-
-const soundEffectGlobal = globalThis as typeof globalThis & {
-  __soundEffectManager?: SoundEffectManager
-  __soundEffectState?: SoundEffectState
-}
-
-const soundManager = soundEffectGlobal.__soundEffectManager || new SoundEffectManager()
-const soundEffectState: SoundEffectState = soundEffectGlobal.__soundEffectState || { bound: false }
+const soundManager = new SoundEffectManager()
 
 // Handle click events on interactive elements
 function handleGlobalClick(event: MouseEvent) {
@@ -194,12 +186,6 @@ function handleGlobalKeydown(event: KeyboardEvent) {
   soundManager.playSound(soundTypes.typing)
 }
 
-if (!soundEffectState.bound) {
-  document.addEventListener('click', handleGlobalClick)
-  document.addEventListener('keydown', handleGlobalKeydown)
-  soundEffectState.bound = true
-}
-
-soundEffectGlobal.__soundEffectManager = soundManager
-soundEffectGlobal.__soundEffectState = soundEffectState
+document.addEventListener('click', handleGlobalClick)
+document.addEventListener('keydown', handleGlobalKeydown)
 </script>

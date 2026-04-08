@@ -11,7 +11,7 @@ const MOTION_DURATION_MAP: Record<MotionSpeed, { desktop: number, mobile: number
 }
 
 function isMobileViewport() {
-  return window.matchMedia('(max-width: 767px)').matches
+  return window.matchMedia('(max-width: 768px)').matches
 }
 
 export function getMotionDuration(speed: MotionSpeed = 'base') {

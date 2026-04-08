@@ -164,7 +164,7 @@ const mobileDefaultLabel = mobileDefaultTab === 'toc' ? currentUI.toc : currentU
 </div>
 
 <style>
-  @media (min-width: 768px) {
+  @media (min-width: 769px) {
     .toc-mobile-shell {
       display: none;
     }
@@ -177,11 +177,6 @@ const mobileDefaultLabel = mobileDefaultTab === 'toc' ? currentUI.toc : currentU
     --toc-mobile-offset-bottom: calc(8.25rem + env(safe-area-inset-bottom));
     --toc-mobile-control-size: 2.56rem;
     --toc-mobile-panel-gap: 0.72rem;
-    --toc-mobile-panel-open-duration: 250ms;
-    --toc-mobile-panel-close-duration: 300ms;
-    --toc-mobile-backdrop-open-duration: 240ms;
-    --toc-mobile-backdrop-close-duration: 280ms;
-    --toc-mobile-tab-switch-duration: 220ms;
     position: relative;
     z-index: 46;
   }
@@ -238,9 +233,7 @@ const mobileDefaultLabel = mobileDefaultTab === 'toc' ? currentUI.toc : currentU
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
-    transition:
-      opacity var(--toc-mobile-backdrop-close-duration) var(--motion-ease-standard, cubic-bezier(0.22, 1, 0.36, 1)),
-      visibility 0s linear var(--toc-mobile-backdrop-close-duration);
+    transition: opacity var(--motion-fast, 160ms) ease, visibility 0s linear var(--motion-fast, 160ms);
     z-index: 44;
   }
 
@@ -268,11 +261,12 @@ const mobileDefaultLabel = mobileDefaultTab === 'toc' ? currentUI.toc : currentU
     visibility: hidden;
     pointer-events: none;
     overflow: hidden;
-    transform: translateX(calc(-100% - 0.95rem));
+    transform: translateX(calc(-100% - 1.15rem)) scale(0.985);
+    transform-origin: left center;
     transition:
-      opacity var(--toc-mobile-panel-close-duration) var(--motion-ease-standard, cubic-bezier(0.22, 1, 0.36, 1)),
-      transform var(--toc-mobile-panel-close-duration) var(--motion-ease-standard, cubic-bezier(0.22, 1, 0.36, 1)),
-      visibility 0s linear var(--toc-mobile-panel-close-duration);
+      opacity var(--motion-fast, 160ms) ease,
+      transform var(--motion-base, 220ms) var(--motion-ease-enter, cubic-bezier(0.16, 1, 0.3, 1)),
+      visibility 0s linear var(--motion-base, 220ms);
     z-index: 47;
   }
 
@@ -432,8 +426,8 @@ const mobileDefaultLabel = mobileDefaultTab === 'toc' ? currentUI.toc : currentU
     transform: translateY(0.55rem);
     transition:
       opacity var(--motion-fast, 160ms) ease,
-      transform var(--toc-mobile-tab-switch-duration) var(--motion-ease-enter, cubic-bezier(0.16, 1, 0.3, 1)),
-      visibility 0s linear var(--toc-mobile-tab-switch-duration);
+      transform var(--motion-slow, 300ms) var(--motion-ease-enter, cubic-bezier(0.16, 1, 0.3, 1)),
+      visibility 0s linear var(--motion-slow, 300ms);
   }
 
   [data-mobile-toc-shell][data-active-tab='toc'] [data-mobile-tab-panel='toc'],
@@ -449,23 +443,18 @@ const mobileDefaultLabel = mobileDefaultTab === 'toc' ? currentUI.toc : currentU
     opacity: 1;
     visibility: visible;
     pointer-events: auto;
-    transition:
-      opacity var(--toc-mobile-backdrop-open-duration) var(--motion-ease-enter, cubic-bezier(0.16, 1, 0.3, 1)),
-      visibility 0s linear 0s;
+    transition-delay: 0s;
   }
 
   [data-mobile-toc-shell][data-open='1'] .toc-mobile-panel {
     opacity: 1;
     visibility: visible;
     pointer-events: auto;
-    transform: translateX(0);
-    transition:
-      opacity var(--toc-mobile-panel-open-duration) var(--motion-ease-enter, cubic-bezier(0.16, 1, 0.3, 1)),
-      transform var(--toc-mobile-panel-open-duration) var(--motion-ease-enter, cubic-bezier(0.16, 1, 0.3, 1)),
-      visibility 0s linear 0s;
+    transform: translateX(0) scale(1);
+    transition-delay: 0s;
   }
 
-  @media (max-width: 767px) {
+  @media (max-width: 768px) {
     .toc-mobile-shell {
       --toc-mobile-panel-width: min(15.7rem, calc(100vw - 2.6rem));
       --toc-mobile-offset-bottom: calc(8.5rem + env(safe-area-inset-bottom));
@@ -500,11 +489,7 @@ type MobileTocShell = HTMLElement & {
   __mobileTocCleanup?: () => void
 }
 
-const isMobileViewport = window.matchMedia('(max-width: 767px)')
-type TocMobileLifecycleState = { bound: boolean }
-const tocMobileGlobal = globalThis as typeof globalThis & {
-  __tocMobileLifecycleState?: TocMobileLifecycleState
-}
+const isMobileViewport = window.matchMedia('(max-width: 768px)')
 
 function initMobileTocPanels() {
   const shell = document.querySelector<MobileTocShell>('[data-mobile-toc-shell]')
@@ -606,13 +591,8 @@ function cleanupMobileTocPanels() {
   document.querySelectorAll<MobileTocShell>('[data-mobile-toc-shell]').forEach(shell => shell.__mobileTocCleanup?.())
 }
 
-const tocMobileLifecycleState: TocMobileLifecycleState = tocMobileGlobal.__tocMobileLifecycleState || { bound: false }
-
-if (!tocMobileLifecycleState.bound) {
-  document.addEventListener('astro:page-load', initMobileTocPanels)
-  document.addEventListener('astro:before-swap', cleanupMobileTocPanels)
-  tocMobileLifecycleState.bound = true
-}
+document.addEventListener('astro:page-load', initMobileTocPanels)
+document.addEventListener('astro:before-swap', cleanupMobileTocPanels)
 
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initMobileTocPanels, { once: true })
@@ -620,6 +600,4 @@ if (document.readyState === 'loading') {
 else {
   initMobileTocPanels()
 }
-
-tocMobileGlobal.__tocMobileLifecycleState = tocMobileLifecycleState
 </script>

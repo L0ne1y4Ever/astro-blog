@@ -1,63 +1,29 @@
 <script>
-type ImageZoomState = {
-  overlay: HTMLDivElement | null
-  zoomedImg: HTMLImageElement | null
-  originalImg: HTMLImageElement | null
-  controller: AbortController | null
-  bound: boolean
-  listenersBound: boolean
-}
-
-const imageZoomGlobal = globalThis as typeof globalThis & {
-  __imageZoomState?: ImageZoomState
-}
-
-const imageZoomState = (imageZoomGlobal.__imageZoomState || {
-  overlay: null,
-  zoomedImg: null,
-  originalImg: null,
-  controller: null,
-  bound: false,
-  listenersBound: false,
-}) as ImageZoomState
+let overlay: HTMLDivElement | null = null
+let zoomedImg: HTMLImageElement | null = null
+let originalImg: HTMLImageElement | null = null
 
 // Setup overlay element
 function setupOverlay() {
-  if (imageZoomState.overlay?.isConnected) {
-    return
-  }
-
-  const overlay = document.createElement('div')
+  overlay = document.createElement('div')
   overlay.className = 'zoom-overlay'
   overlay.setAttribute('role', 'dialog')
   overlay.setAttribute('aria-modal', 'true')
   overlay.setAttribute('aria-label', 'Image Viewer')
   overlay.setAttribute('tabindex', '-1')
 
-  imageZoomState.overlay = overlay
   document.body.appendChild(overlay)
 }
 
 // Clean up zoom state
-function cleanupZoom(force: boolean = false) {
-  document.body.style.overflow = ''
-
-  if (force && imageZoomState.zoomedImg) {
-    imageZoomState.zoomedImg.remove()
-  }
-
-  imageZoomState.zoomedImg = null
-  imageZoomState.originalImg = null
-
-  if (force && imageZoomState.overlay) {
-    imageZoomState.overlay.remove()
-    imageZoomState.overlay = null
-  }
+function cleanupZoom() {
+  overlay = null
+  zoomedImg = null
+  originalImg = null
 }
 
 // Zoom in the image
 function zoomIn(img: HTMLImageElement) {
-  const overlay = imageZoomState.overlay
   if (!overlay) {
     return
   }
@@ -65,10 +31,10 @@ function zoomIn(img: HTMLImageElement) {
   // Disable scrolling and get position
   document.body.style.overflow = 'hidden'
   const rect = img.getBoundingClientRect()
-  imageZoomState.originalImg = img
+  originalImg = img
 
   // Clone and setup image
-  const zoomedImg = img.cloneNode() as HTMLImageElement
+  zoomedImg = img.cloneNode() as HTMLImageElement
   zoomedImg.className = 'zoom-img'
   zoomedImg.removeAttribute('id')
   zoomedImg.removeAttribute('loading')
@@ -79,7 +45,6 @@ function zoomIn(img: HTMLImageElement) {
   zoomedImg.style.height = `${rect.height}px`
 
   // Add to DOM and show
-  imageZoomState.zoomedImg = zoomedImg
   document.body.appendChild(zoomedImg)
   overlay.style.display = 'block'
   overlay.focus()
@@ -87,7 +52,7 @@ function zoomIn(img: HTMLImageElement) {
   // Calculate scale and position
   const viewportWidth = window.innerWidth
   const viewportHeight = window.innerHeight
-  const scaleFactor = window.innerWidth <= 767 ? 1 : 0.8
+  const scaleFactor = window.innerWidth < 768 ? 1 : 0.8
   const scale = Math.min(
     (viewportWidth * scaleFactor) / rect.width,
     (viewportHeight * scaleFactor) / rect.height,
@@ -109,9 +74,6 @@ function zoomIn(img: HTMLImageElement) {
 
 // Zoom out the image
 function zoomOut() {
-  const overlay = imageZoomState.overlay
-  const zoomedImg = imageZoomState.zoomedImg
-  const originalImg = imageZoomState.originalImg
   if (!overlay || !zoomedImg || !originalImg) {
     return
   }
@@ -123,22 +85,22 @@ function zoomOut() {
 
   // Define cleanup logic
   const cleanup = () => {
-    if (!imageZoomState.zoomedImg) {
+    if (!zoomedImg) {
       return
     }
 
     // Remove zoomed image
-    imageZoomState.zoomedImg?.remove()
-    imageZoomState.zoomedImg = null
+    zoomedImg?.remove()
+    zoomedImg = null
 
     // Hide overlay
-    if (imageZoomState.overlay) {
-      imageZoomState.overlay.style.display = 'none'
+    if (overlay) {
+      overlay.style.display = 'none'
     }
 
     // Restore focus
-    imageZoomState.originalImg?.focus()
-    imageZoomState.originalImg = null
+    originalImg?.focus()
+    originalImg = null
   }
 
   // Listen for transition end to cleanup
@@ -147,7 +109,7 @@ function zoomOut() {
 
 // Handle click events
 function handleClick(event: MouseEvent) {
-  if (imageZoomState.zoomedImg) {
+  if (zoomedImg) {
     zoomOut()
     return
   }
@@ -166,39 +128,8 @@ function handleClick(event: MouseEvent) {
   zoomIn(target)
 }
 
-function initImageZoom() {
-  setupOverlay()
-  if (imageZoomState.bound) {
-    return
-  }
-
-  const controller = new AbortController()
-  imageZoomState.controller = controller
-  imageZoomState.bound = true
-
-  document.addEventListener('click', handleClick, { signal: controller.signal })
-  window.addEventListener('resize', zoomOut, { signal: controller.signal })
-}
-
-function destroyImageZoom() {
-  imageZoomState.controller?.abort()
-  imageZoomState.controller = null
-  imageZoomState.bound = false
-  cleanupZoom(true)
-}
-
-if (!imageZoomState.listenersBound) {
-  document.addEventListener('astro:page-load', initImageZoom)
-  document.addEventListener('astro:before-swap', destroyImageZoom)
-  imageZoomState.listenersBound = true
-}
-
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initImageZoom, { once: true })
-}
-else {
-  initImageZoom()
-}
-
-imageZoomGlobal.__imageZoomState = imageZoomState
+document.addEventListener('astro:page-load', setupOverlay)
+document.addEventListener('astro:before-swap', cleanupZoom)
+document.addEventListener('click', handleClick)
+window.addEventListener('resize', zoomOut)
 </script>

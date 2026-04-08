@@ -14,7 +14,6 @@ interface Props {
 const {
   light: { background: lightMode },
   dark: { background: darkMode },
-  mode: defaultMode,
 } = themeConfig.color
 
 const { supportedLangs } = Astro.props
@@ -39,7 +38,11 @@ const showPostShortcuts = isPost
 ---
 
 <div
-  class="floating-utility-cluster"
+  class:list={[
+  'fixed bottom-24 right-[min(7.25vw,3.731rem)] z-30 flex items-center gap-4 min-[823px]:max-lg:right-[calc(50vw-22rem)]',
+  
+  'lg:(right-[max(5rem,calc(50vw-35rem))] bottom-[max(13rem,12vh)] w-14rem justify-start)',
+]}
 >
   <!-- Language Switcher -->
   {showLanguageSwitcher && (
@@ -63,7 +66,6 @@ const showPostShortcuts = isPost
     class="floating-utility-button c-secondary"
     data-light-mode={lightMode}
     data-dark-mode={darkMode}
-    data-default-mode={defaultMode}
     aria-label="Switch light/dark theme"
     >
       <ThemeToggleIcon
@@ -104,28 +106,8 @@ const showPostShortcuts = isPost
 
 <!-- Theme Toggle Script >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> -->
 <script>
-type FloatingButtonState = {
-  bound: boolean
-  mediaQuery: MediaQueryList | null
-  handleThemeToggle: ((e: MouseEvent) => void) | null
-  handlePostShortcutClick: ((e: MouseEvent) => void) | null
-  handleSystemChange: ((event: MediaQueryListEvent) => void) | null
-}
-
-const floatingButtonGlobal = globalThis as typeof globalThis & {
-  __floatingButtonState?: FloatingButtonState
-}
-
-const FLOATING_BUTTON_STATE: FloatingButtonState = floatingButtonGlobal.__floatingButtonState || {
-  bound: false,
-  mediaQuery: null,
-  handleThemeToggle: null,
-  handlePostShortcutClick: null,
-  handleSystemChange: null,
-}
-
 // Apply theme changes
-function applyTheme(isDark: boolean, persist: boolean = true) {
+function applyTheme(isDark: boolean) {
   document.documentElement.classList.toggle('dark', isDark)
 
   // Update meta theme-color tag
@@ -138,10 +120,7 @@ function applyTheme(isDark: boolean, persist: boolean = true) {
     metaThemeColor.setAttribute('content', isDark ? darkMode : lightMode)
   }
 
-  if (persist) {
-    localStorage.setItem('theme', isDark ? 'dark' : 'light')
-  }
-
+  localStorage.setItem('theme', isDark ? 'dark' : 'light')
   document.dispatchEvent(new Event('theme-changed'))
 }
 
@@ -162,10 +141,7 @@ function handleThemeToggle(e: MouseEvent) {
   }
 
   // If reduceMotion is enabled, update theme directly
-  if (
-    document.documentElement.classList.contains('reduce-motion')
-    || typeof document.startViewTransition !== 'function'
-  ) {
+  if (document.documentElement.classList.contains('reduce-motion')) {
     toggleTheme()
     return
   }
@@ -214,60 +190,16 @@ function handlePostShortcutClick(e: MouseEvent) {
 
 // Listen to system theme changes in real time
 function handleSystemChange(event: MediaQueryListEvent) {
-  const themeButton = document.getElementById('theme-toggle-button')
-  const defaultMode = themeButton?.dataset.defaultMode
-  const hasManualTheme = Boolean(localStorage.getItem('theme'))
-  if (defaultMode !== 'auto' || hasManualTheme) {
-    return
-  }
-
-  applyTheme(event.matches, false)
+  const isDark = event.matches
+  applyTheme(isDark)
 }
 
-if (!FLOATING_BUTTON_STATE.bound) {
-  FLOATING_BUTTON_STATE.mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-  FLOATING_BUTTON_STATE.handleThemeToggle = handleThemeToggle
-  FLOATING_BUTTON_STATE.handlePostShortcutClick = handlePostShortcutClick
-  FLOATING_BUTTON_STATE.handleSystemChange = handleSystemChange
-
-  document.addEventListener('click', FLOATING_BUTTON_STATE.handleThemeToggle)
-  document.addEventListener('click', FLOATING_BUTTON_STATE.handlePostShortcutClick)
-  FLOATING_BUTTON_STATE.mediaQuery.addEventListener('change', FLOATING_BUTTON_STATE.handleSystemChange)
-
-  FLOATING_BUTTON_STATE.bound = true
-}
-
-floatingButtonGlobal.__floatingButtonState = FLOATING_BUTTON_STATE
+document.addEventListener('click', handleThemeToggle)
+document.addEventListener('click', handlePostShortcutClick)
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', handleSystemChange)
 </script>
 
 <style>
-  .floating-utility-cluster {
-    position: fixed;
-    right: min(7.25vw, 3.731rem);
-    bottom: calc(6rem + env(safe-area-inset-bottom));
-    z-index: 30;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-  }
-
-  @media (min-width: 768px) and (max-width: 1023px) {
-    .floating-utility-cluster {
-      right: max(1.5rem, calc(env(safe-area-inset-right) + 1.5rem));
-      bottom: calc(1.75rem + env(safe-area-inset-bottom));
-      gap: 0.9rem;
-    }
-  }
-
-  @media (min-width: 1024px) {
-    .floating-utility-cluster {
-      right: max(5rem, calc(50vw - 35rem));
-      bottom: max(13rem, 12vh);
-      width: 14rem;
-      justify-content: flex-start;
-    }
-  }
-
   .floating-utility-button {
     width: 1rem;
     height: 1rem;
