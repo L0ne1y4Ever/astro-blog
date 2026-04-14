@@ -13,7 +13,7 @@ const {
 
 <aside
   id="toc-container"
-  class="mb-6 uno-round-border bg-secondary/5 2xl:(fixed top-44.5 max-w-[min(calc(50vw-38rem),13rem)] border-none bg-secondary/0)"
+  class="mb-6 hidden bg-secondary/5 min-[1536px]:(fixed top-44.5 block max-w-[min(calc(50vw-38rem),13rem)] border-none bg-secondary/0)"
 >
   {hasToc && (
     <>
@@ -25,7 +25,7 @@ const {
       <div class="relative h-12 w-full">
         <label
           for="toc-toggle"
-          class="toc-toggle-label absolute inset-0 flex cursor-pointer items-center 2xl:(static flex c-secondary/60 transition-colors ease-out hover:c-primary)"
+          class="toc-toggle-label absolute inset-0 flex cursor-pointer items-center min-[1536px]:(static flex c-secondary/60 transition-colors ease-out hover:c-primary)"
         >
           <span id="toc-mobile-text">
             {currentUI.toc}
@@ -34,7 +34,7 @@ const {
           <TocIcon
             id="toc-desktop-icon"
             aria-hidden="true"
-            class="ml-4 hidden aspect-square w-4.2 2xl:(mt-4 block origin-center active:scale-90!)"
+            class="ml-4 hidden aspect-square w-4.2 min-[1536px]:(mt-4 block origin-center active:scale-90!)"
             fill="currentColor"
           />
         </label>
@@ -134,12 +134,6 @@ const {
     --toc-side-offset: clamp(0.9rem, 1.35vw, 1.6rem);
   }
 
-  @media (max-width: 768px), (min-width: 769px) and (hover: none) and (pointer: coarse) {
-    #toc-container {
-      display: none;
-    }
-  }
-
   @media (min-width: 1536px) {
     #toc-container {
       left: var(--toc-side-offset);
@@ -147,15 +141,15 @@ const {
   }
 
   #toc-mobile-text {
-    --at-apply: 'ml-4 font-semibold 2xl:hidden';
+    --at-apply: 'ml-4 font-semibold min-[1536px]:hidden';
   }
 
   #series-mobile-text {
-    --at-apply: 'ml-4 text-sm font-semibold 2xl:hidden';
+    --at-apply: 'ml-4 text-sm font-semibold min-[1536px]:hidden';
   }
 
   #toc-links-list {
-    --at-apply: 'mb-2.5 mt-1 list-none pl-0 2xl:(mb-1 space-y-1) space-y-1.1';
+    --at-apply: 'mb-2.5 mt-1 list-none pl-0 min-[1536px]:(mb-1 space-y-1) space-y-1.1';
     scroll-target-group: auto;
   }
 
@@ -171,16 +165,16 @@ const {
   .toc-links-h2,
   .toc-links-h3,
   .toc-links-h4 {
-    --at-apply: 'text-balance text-sm font-normal no-underline after:bottom-0.15em 2xl:(text-3.2 c-secondary/80 hover:c-primary hover:font-medium)';
+    --at-apply: 'text-balance text-sm font-normal no-underline after:bottom-0.15em min-[1536px]:(text-3.2 c-secondary/80 hover:c-primary hover:font-medium)';
     transition: color var(--motion-fast, 160ms) ease-out, font-weight var(--motion-fast, 160ms) ease-out;
   }
 
   #toc-toggle:checked ~ #toc-accordion-wrapper #toc-accordion-content {
-    --at-apply: 'overflow-y-auto 2xl:overflow-hidden';
+    --at-apply: 'overflow-y-auto min-[1536px]:overflow-hidden';
   }
 
   #toc-accordion-content {
-    --at-apply: 'max-h-59 overflow-hidden pl-4 pr-6 2xl:(max-h-[calc(100vh-27.5rem)] overflow-y-auto scrollbar-hidden pl-4 pr-4)';
+    --at-apply: 'max-h-59 overflow-hidden pl-4 pr-6 min-[1536px]:(max-h-[calc(100vh-27.5rem)] overflow-y-auto scrollbar-hidden pl-4 pr-4)';
     scrollbar-width: thin;
     scrollbar-color: oklch(var(--un-preset-theme-colors-secondary) / 0.15) transparent;
   }
@@ -208,15 +202,15 @@ const {
   }
 
   #series-desktop-trigger {
-    --at-apply: 'ml-4 hidden items-center gap-2.4 2xl:flex';
+    --at-apply: 'ml-4 hidden items-center gap-2.4 min-[1536px]:flex';
   }
 
   #series-toggle:checked ~ #series-accordion-wrapper #series-accordion-content {
-    --at-apply: 'overflow-y-auto 2xl:overflow-hidden';
+    --at-apply: 'overflow-y-auto min-[1536px]:overflow-hidden';
   }
 
   #series-accordion-content {
-    --at-apply: 'max-h-72 overflow-hidden px-4 2xl:(max-h-[calc(100vh-32rem)] overflow-y-auto scrollbar-hidden px-4 pb-0)';
+    --at-apply: 'max-h-72 overflow-hidden px-4 min-[1536px]:(max-h-[calc(100vh-32rem)] overflow-y-auto scrollbar-hidden px-4 pb-0)';
     scrollbar-width: thin;
     scrollbar-color: oklch(var(--un-preset-theme-colors-secondary) / 0.15) transparent;
   }
@@ -230,7 +224,7 @@ const {
   }
 
   .post-series-list {
-    --at-apply: 'space-y-3 2xl:(space-y-2.8)';
+    --at-apply: 'space-y-3 min-[1536px]:(space-y-2.8)';
   }
 
   .post-series-link {
@@ -267,11 +261,11 @@ const {
   }
 
   #toc-accordion-wrapper {
-    --at-apply: '2xl:rows-[1fr]';
+    --at-apply: 'min-[1536px]:rows-[1fr]';
   }
 
   #toc-toggle:checked ~ #toc-accordion-wrapper {
-    --at-apply: '2xl:rows-[0fr]';
+    --at-apply: 'min-[1536px]:rows-[0fr]';
   }
 
   #series-accordion-wrapper {
@@ -284,11 +278,11 @@ const {
   }
 
   #series-accordion-wrapper {
-    --at-apply: '2xl:rows-[1fr]';
+    --at-apply: 'min-[1536px]:rows-[1fr]';
   }
 
   #series-toggle:checked ~ #series-accordion-wrapper {
-    --at-apply: '2xl:rows-[0fr]';
+    --at-apply: 'min-[1536px]:rows-[0fr]';
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -305,7 +299,7 @@ const {
 </style>
 
 <script>
-const is2xl = window.matchMedia('(min-width: 1536px)')
+const isDesktopToc = window.matchMedia('(min-width: 1536px)')
 
 let ticking = false
 let lastLink: Element | null = null
@@ -327,7 +321,7 @@ function scrollToActiveLink() {
 }
 
 function handleScroll() {
-  if (!ticking && is2xl.matches) {
+  if (!ticking && isDesktopToc.matches) {
     window.requestAnimationFrame(scrollToActiveLink)
     ticking = true
   }

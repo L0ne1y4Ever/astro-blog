@@ -164,7 +164,7 @@ const mobileDefaultLabel = mobileDefaultTab === 'toc' ? currentUI.toc : currentU
 </div>
 
 <style>
-  @media (min-width: 769px) and (hover: hover) and (pointer: fine) {
+  @media (min-width: 1536px) {
     .toc-mobile-shell {
       display: none;
     }
@@ -500,7 +500,7 @@ type MobileTocShell = HTMLElement & {
   __mobileTocCleanup?: () => void
 }
 
-const isMobileViewport = window.matchMedia('(max-width: 768px), (min-width: 769px) and (hover: none) and (pointer: coarse)')
+const isNonDesktopViewport = window.matchMedia('(max-width: 1535px)')
 
 function initMobileTocPanels() {
   const shell = document.querySelector<MobileTocShell>('[data-mobile-toc-shell]')
@@ -541,7 +541,7 @@ function initMobileTocPanels() {
   }
 
   const setOpen = (nextOpen: boolean) => {
-    const isOpen = isMobileViewport.matches && nextOpen
+    const isOpen = isNonDesktopViewport.matches && nextOpen
     shell.dataset.open = isOpen ? '1' : '0'
     trigger.classList.toggle('is-active', isOpen)
     trigger.setAttribute('aria-expanded', isOpen ? 'true' : 'false')
@@ -580,8 +580,8 @@ function initMobileTocPanels() {
     }
   }, { signal: controller.signal })
 
-  isMobileViewport.addEventListener('change', () => {
-    if (!isMobileViewport.matches) {
+  isNonDesktopViewport.addEventListener('change', () => {
+    if (!isNonDesktopViewport.matches) {
       setOpen(false)
     }
   }, { signal: controller.signal })
