@@ -6,7 +6,7 @@ lang: zh
 ---
 <div style="display: flex; align-items: center; gap: clamp(1rem, 3.2vw, 2rem); margin-bottom: 2rem; flex-wrap: wrap;">
   <img 
-    src="https://img.theslowmo.com/2026/02/1bd502712b2b2954cd9cad725fa078fd.webp" 
+    src="https://img.theslowmo.com/2026/08/bf1a4df8e1e457061fcc750c054f6691.webp" 
     alt="SlowMo 头像" 
     loading="lazy"
     decoding="async"
