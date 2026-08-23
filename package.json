@@ -1,9 +1,9 @@
 {
-  "name": "astro-theme-retypeset",
+  "name": "slowmoblogs",
   "type": "module",
   "version": "1.0.0",
   "packageManager": "pnpm@10.26.0",
-  "repository": "https://github.com/radishzzz/astro-theme-retypeset",
+  "repository": "https://github.com/L0ne1y4Ever/astro-blog",
   "scripts": {
     "stats": "node src/tools/gen-stats.mjs",
     "dev": "pnpm stats && astro check && astro dev",

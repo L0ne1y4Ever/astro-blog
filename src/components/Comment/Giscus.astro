@@ -46,15 +46,18 @@ const giscusConfig = {
 
 <!-- Giscus Script >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> -->
 <script>
+import { base } from '@/config'
+
 let giscusContainer: HTMLElement | null = null
 let giscusObserver: IntersectionObserver | null = null
 let giscusLoaded = false
 
 function getThemeUrl() {
   const isDark = document.documentElement.classList.contains('dark')
-  return isDark
-    ? `https://cdn.jsdelivr.net/gh/radishzzz/astro-theme-retypeset@master/public/giscus/theme-dark.css`
-    : `https://cdn.jsdelivr.net/gh/radishzzz/astro-theme-retypeset@master/public/giscus/theme-light.css`
+  return new URL(
+    isDark ? `${base}/giscus/theme-dark.css` : `${base}/giscus/theme-light.css`,
+    location.origin,
+  ).href
 }
 
 function updateGiscusTheme() {
